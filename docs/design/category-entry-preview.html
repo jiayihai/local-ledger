@@ -1,0 +1,239 @@
+<div id="category-entry-v2">
+  <style>
+    #category-entry-v2 .ce-stage { display:flex; justify-content:center; padding:18px 6px }
+    #category-entry-v2 .ce-phone { --ce-ink:#191919; --ce-paper:#fff; --ce-red:#c72d39; --ce-muted:#666; --ce-rule:#e5e5e5; --ce-radius:22px; position:relative; isolation:isolate; width:100%; max-width:390px; height:770px; background:var(--ce-paper); color:var(--ce-ink); border:1px solid #d2d2d2; border-radius:34px; overflow:hidden; box-shadow:0 12px 36px #0000000a; font:15px/1.5 -apple-system,BlinkMacSystemFont,"Microsoft YaHei",sans-serif }
+    #category-entry-v2 .ce-phone * { box-sizing:border-box }
+    #category-entry-v2 .ce-phone [hidden] { display:none!important }
+    #category-entry-v2 .ce-phone button { font:inherit; color:inherit; background:transparent; border:0; padding:10px 12px; min-height:44px }
+    #category-entry-v2 .ce-phone button:focus-visible { outline:2px solid var(--ce-ink); outline-offset:2px }
+    #category-entry-v2 .ce-status { display:flex; justify-content:space-between; padding:16px 22px 10px; font-size:12px }
+    #category-entry-v2 .ce-body { padding:8px 22px 100px }
+    #category-entry-v2 .ce-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px }
+    #category-entry-v2 .ce-head h2 { font-size:30px; font-weight:500; margin:0 }
+    #category-entry-v2 .ce-muted { color:var(--ce-muted); font-size:13px }
+    #category-entry-v2 .ce-period { margin:0 0 20px }
+    #category-entry-v2 .ce-summary { display:flex; justify-content:space-between; gap:14px; margin-bottom:24px; font-variant-numeric:tabular-nums }
+    #category-entry-v2 .ce-summary div { display:flex; flex-direction:column; gap:4px }
+    #category-entry-v2 .ce-summary strong { font-size:21px; font-weight:500 }
+    #category-entry-v2 .ce-red { color:var(--ce-red) }
+    #category-entry-v2 .ce-cards { display:flex; flex-direction:column; gap:14px }
+    #category-entry-v2 .ce-card { display:grid; grid-template-columns:minmax(0,1fr) 72px; border:1.4px solid var(--ce-ink); border-radius:var(--ce-radius); background:var(--ce-paper); overflow:hidden }
+    #category-entry-v2 .ce-card[data-type="income"] { border-color:var(--ce-red) }
+    #category-entry-v2 .ce-card .ce-open { text-align:left; display:flex; flex-direction:column; gap:5px; padding:15px 17px }
+    #category-entry-v2 .ce-name { font-size:19px; font-weight:500 }
+    #category-entry-v2 .ce-card-amount { font-size:23px; font-weight:500; font-variant-numeric:tabular-nums; white-space:nowrap }
+    #category-entry-v2 .ce-card .ce-detail { align-self:center; font-size:13px; color:var(--ce-muted); margin-right:5px }
+    #category-entry-v2 .ce-new { text-align:center; margin-top:18px; color:var(--ce-muted); font-size:14px }
+    #category-entry-v2 .ce-nav { position:absolute; bottom:0; left:20px; right:20px; padding:16px 0 23px; border-top:1px solid var(--ce-rule); display:flex; justify-content:space-around; align-items:center; gap:8px; background:var(--ce-paper) }
+    #category-entry-v2 .ce-nav [data-active="true"] { font-weight:500 }
+    #category-entry-v2 .ce-entry-top { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 22px }
+    #category-entry-v2 .ce-entry-top h2 { font-size:21px; font-weight:500; margin:0 }
+    #category-entry-v2 .ce-tag { display:inline-block; padding:4px 12px; border:1px solid var(--ce-ink); border-radius:12px; margin:0 0 14px; font-size:13px }
+    #category-entry-v2 .ce-tag.ce-red { border-color:var(--ce-red) }
+    #category-entry-v2 .ce-field { display:flex; flex-direction:column; gap:7px; margin-bottom:18px }
+    #category-entry-v2 .ce-phone input { width:100%; min-width:0; font:inherit; font-size:16px; color:var(--ce-ink); background:var(--ce-paper); border:1px solid var(--ce-rule); border-radius:14px; padding:11px 12px }
+    #category-entry-v2 .ce-phone input[name="amount"] { font-size:38px; font-weight:500; padding:14px 10px; border:0; border-bottom:1px solid var(--ce-rule); border-radius:0; font-variant-numeric:tabular-nums }
+    #category-entry-v2 .ce-phone .ce-primary { width:100%; background:var(--ce-ink); color:var(--ce-paper); border-radius:23px; padding:12px 20px; margin-top:8px }
+    #category-entry-v2 .ce-phone[data-current-type="income"] .ce-primary { background:var(--ce-red) }
+    #category-entry-v2 .ce-sheet-scrim { position:absolute; inset:0; display:flex; align-items:flex-end; background:#00000030 }
+    #category-entry-v2 .ce-sheet { width:100%; border-radius:28px 28px 0 0; background:var(--ce-paper); padding:12px 22px 28px; box-shadow:0 -8px 28px #0000000a }
+    #category-entry-v2 .ce-handle { width:36px; height:4px; border-radius:4px; background:#d0d0d0; margin:0 auto 12px }
+    #category-entry-v2 .ce-sheet-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px }
+    #category-entry-v2 .ce-sheet-head h3 { font-size:20px; font-weight:500; margin:0 }
+    #category-entry-v2 .ce-sheet-amount { margin:0 0 19px; font-size:26px; font-variant-numeric:tabular-nums }
+    #category-entry-v2 .ce-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:16px }
+    #category-entry-v2 .ce-options button { border:1px solid var(--ce-ink); border-radius:14px; padding:13px 5px; min-width:0 }
+    #category-entry-v2 .ce-phone[data-current-type="income"] .ce-options button { border-color:var(--ce-red); color:var(--ce-red) }
+    #category-entry-v2 .ce-feedback { margin:12px 0 0; font-size:13px; color:var(--ce-muted); min-height:20px }
+    #category-entry-v2 .ce-toast { position:absolute; bottom:95px; left:20px; right:20px; border-radius:16px; padding:12px 14px; background:var(--ce-ink); color:var(--ce-paper); display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:0 5px 16px #00000014; font-size:13px }
+    #category-entry-v2 .ce-toast button { color:var(--ce-paper); padding:5px; text-decoration:underline }
+    #category-entry-v2 .ce-toast span { min-width:0; overflow-wrap:anywhere }
+    #category-entry-v2 .ce-list { display:flex; flex-direction:column; gap:12px; margin-top:20px }
+    #category-entry-v2 .ce-list-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:14px 12px; border:1px solid var(--ce-ink); border-radius:15px }
+    #category-entry-v2 .ce-list-row[data-type="income"] { border-color:var(--ce-red) }
+    #category-entry-v2 .ce-list-row div { display:flex; flex-direction:column; gap:3px }
+    @media(max-width:370px) { #category-entry-v2 .ce-stage { padding-left:0; padding-right:0 } #category-entry-v2 .ce-body { padding-left:16px; padding-right:16px } #category-entry-v2 .ce-card-amount { font-size:21px } #category-entry-v2 .ce-summary strong { font-size:19px } #category-entry-v2 .ce-sheet { padding-left:16px; padding-right:16px } }
+  </style>
+  <div class="ce-stage viz-dotted-background">
+    <div class="ce-phone" aria-label="总账大类入口记账原型">
+      <div class="ce-status"><span>9:41</span><span>需求草图 v0.2 · 示例</span></div>
+      <section class="ce-body" data-screen="home" aria-label="记账首页">
+        <div class="ce-head"><h2>记账</h2><span class="ce-muted">全部记录 · 一个总账</span></div>
+        <p class="ce-period ce-muted">2026年11月</p>
+        <div class="ce-summary"><div><span class="ce-muted">本月支出</span><strong data-total="expense">¥ 1,860.00</strong></div><div><span class="ce-muted">本月收入</span><strong class="ce-red" data-total="income">¥ 8,000.00</strong></div></div>
+        <div class="ce-cards">
+          <div class="ce-card" data-category="personal" data-type="expense"><button type="button" class="ce-open" data-open="personal"><span class="ce-name">个人</span><span class="ce-card-amount" data-amount="personal">− ¥ 1,260.00</span></button><button type="button" class="ce-detail" data-detail="personal" aria-label="查看个人明细">明细 ›</button></div>
+          <div class="ce-card" data-category="love" data-type="expense"><button type="button" class="ce-open" data-open="love"><span class="ce-name">恋爱</span><span class="ce-card-amount" data-amount="love">− ¥ 600.00</span></button><button type="button" class="ce-detail" data-detail="love" aria-label="查看恋爱明细">明细 ›</button></div>
+          <div class="ce-card" data-category="income" data-type="income"><button type="button" class="ce-open" data-open="income"><span class="ce-name">收入</span><span class="ce-card-amount ce-red" data-amount="income">+ ¥ 8,000.00</span></button><button type="button" class="ce-detail" data-detail="income" aria-label="查看收入明细">明细 ›</button></div>
+        </div>
+        <div class="ce-new">＋ 新建大类</div>
+        <p class="ce-feedback">卡片金额为本月累计 · 均为演示数据</p>
+      </section>
+      <section class="ce-body" data-screen="entry" aria-label="金额输入" hidden>
+        <div class="ce-entry-top"><button type="button" data-action="home">‹ 返回</button><h2 class="ce-entry-name">恋爱</h2><span class="ce-muted">记一笔</span></div>
+        <div class="ce-tag">支出</div>
+        <label class="ce-field"><span class="ce-muted">金额 · 元</span><input name="amount" inputmode="decimal" value="128.00" autocomplete="off" aria-label="金额，单位元" /></label>
+        <label class="ce-field"><span class="ce-muted">日期（建议项）</span><input name="date" type="date" value="2026-11-17" /></label>
+        <label class="ce-field"><span class="ce-muted">备注（可选，建议项）</span><input name="note" value="" placeholder="添加备注" maxlength="100" autocomplete="off" /></label>
+        <button type="button" class="ce-primary" data-action="confirm">确定</button>
+        <p class="ce-feedback ce-validation" role="alert"></p>
+      </section>
+      <section class="ce-body" data-screen="details" aria-label="明细示例" hidden>
+        <div class="ce-entry-top"><button type="button" data-action="home">‹ 返回</button><h2 class="ce-details-name">明细</h2><span class="ce-muted">示例</span></div>
+        <div class="ce-list"></div>
+        <p class="ce-feedback">仅展示示例记录，不代表真实账目</p>
+      </section>
+      <nav class="ce-nav" aria-label="底部导航"><button type="button" data-nav="home" data-active="true">记账</button><button type="button" data-nav="details">明细</button><span class="ce-muted">设置</span></nav>
+      <div class="ce-sheet-scrim" hidden>
+        <section class="ce-sheet" role="dialog" aria-modal="true" aria-label="选择小类并保存">
+          <div class="ce-handle"></div>
+          <div class="ce-sheet-head"><h3>选择小类</h3><button type="button" data-action="dismiss">返回修改</button></div>
+          <p class="ce-sheet-amount"></p>
+          <div class="ce-options"></div>
+          <p class="ce-feedback">点一个小类，即保存并回到首页</p>
+        </section>
+      </div>
+      <div class="ce-toast" role="status" hidden><span></span><button type="button" data-action="undo">撤销</button></div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('category-entry-v2');
+      const phone = root.querySelector('.ce-phone');
+      const overlay = root.querySelector('.ce-sheet-scrim');
+      const toast = root.querySelector('.ce-toast');
+      const amount = root.querySelector('[name="amount"]');
+      const date = root.querySelector('[name="date"]');
+      const note = root.querySelector('[name="note"]');
+      const groups = {
+        personal:{name:'个人',type:'expense',base:126000,sub:['饮食','娱乐','会员']},
+        love:{name:'恋爱',type:'expense',base:60000,sub:['饮食','礼物','约会']},
+        income:{name:'收入',type:'income',base:800000,sub:['工资','奖金','其他收入']}
+      };
+      const examples = [
+        {group:'personal',sub:'饮食',cents:3800,date:'2026-11-17',note:'示例午餐'},
+        {group:'love',sub:'礼物',cents:12800,date:'2026-11-16',note:'示例礼物'},
+        {group:'income',sub:'工资',cents:800000,date:'2026-11-15',note:'示例工资'}
+      ];
+      const state = {current:null,screen:'home',pending:null,records:[],undoId:null,serial:0,radius:22};
+      let toastTimer;
+      const money = cents => (cents / 100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      function saveAppearance() {
+        const api = window.openai;
+        if (api && typeof api.setWidgetState === 'function') {
+          const result = api.setWidgetState({modelContent:{illustrationOnly:true},privateContent:{categoryEntryV2:{radius:state.radius}}});
+          if (result && typeof result.catch === 'function') result.catch(() => {});
+        }
+      }
+      function restoreAppearance(snapshot) {
+        const pref = snapshot && snapshot.privateContent && snapshot.privateContent.categoryEntryV2;
+        if (pref && Number.isFinite(pref.radius)) state.radius = Math.min(28,Math.max(12,pref.radius));
+        phone.style.setProperty('--ce-radius', state.radius + 'px');
+      }
+      restoreAppearance(window.openai && window.openai.widgetState);
+      window.addEventListener('openai:set_globals', event => restoreAppearance(event.detail && event.detail.globals && event.detail.globals.widgetState));
+      function show(screen) {
+        state.screen = screen;
+        root.querySelectorAll('[data-screen]').forEach(el => el.hidden = el.dataset.screen !== screen);
+        root.querySelectorAll('[data-nav]').forEach(el => el.dataset.active = String(el.dataset.nav === screen));
+        overlay.hidden = true;
+        phone.removeAttribute('data-current-type');
+        if (screen !== 'entry') state.pending = null;
+      }
+      function dismissToast() { clearTimeout(toastTimer); toast.hidden = true; state.undoId = null; }
+      function updateTotals() {
+        let expense = 0, income = 0;
+        Object.entries(groups).forEach(([key,group]) => {
+          const sum = group.base + state.records.filter(r => r.group === key && r.date.startsWith('2026-11')).reduce((total,r) => total+r.cents,0);
+          root.querySelector('[data-amount="'+key+'"]').textContent = (group.type === 'income' ? '+ ¥ ' : '− ¥ ') + money(sum);
+          if (group.type === 'income') income += sum; else expense += sum;
+        });
+        root.querySelector('[data-total="expense"]').textContent = '¥ ' + money(expense);
+        root.querySelector('[data-total="income"]').textContent = '¥ ' + money(income);
+      }
+      function openEntry(key) {
+        dismissToast(); state.current = key; state.pending = null;
+        show('entry');
+        const group = groups[key];
+        phone.dataset.currentType = group.type;
+        root.querySelector('.ce-entry-name').textContent = group.name;
+        const tag = root.querySelector('.ce-tag');
+        tag.textContent = group.type === 'income' ? '收入' : '支出';
+        tag.classList.toggle('ce-red',group.type === 'income');
+        amount.value = key === 'income' ? '100.00' : key === 'personal' ? '38.00' : '128.00';
+        date.value = '2026-11-17'; note.value = '';
+        root.querySelector('.ce-validation').textContent = '';
+        amount.focus();
+      }
+      function saveRecord(sub) {
+        if (overlay.hidden || !state.pending) return;
+        const record = {...state.pending,sub,id:++state.serial};
+        state.pending = null;
+        overlay.hidden = true;
+        state.records.push(record);
+        show('home'); updateTotals();
+        state.undoId = record.id;
+        toast.querySelector('span').textContent = '示例已保存：'+groups[record.group].name+' / '+sub+' / '+money(record.cents)+' 元';
+        toast.hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(dismissToast,7000);
+        root.querySelector('[data-open="'+record.group+'"]').focus();
+      }
+      function details(key) {
+        dismissToast(); show('details');
+        root.querySelector('.ce-details-name').textContent = key ? groups[key].name+'明细' : '全部明细';
+        const mount = root.querySelector('.ce-list'); mount.replaceChildren();
+        const rows = [...state.records].reverse().concat(examples).filter(r => !key || r.group === key).slice(0,5);
+        rows.forEach(record => {
+          const group = groups[record.group];
+          const row = document.createElement('div'); row.className='ce-list-row'; row.dataset.type=group.type;
+          const labels = document.createElement('div');
+          const name = document.createElement('span'); name.textContent=group.name+' / '+record.sub;
+          const small = document.createElement('span'); small.className='ce-muted'; small.textContent=record.date;
+          const value = document.createElement('span'); value.textContent=(group.type==='income'?'+ ':'− ')+money(record.cents); if(group.type==='income')value.className='ce-red';
+          labels.append(name,small); row.append(labels,value); mount.appendChild(row);
+        });
+      }
+      root.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click',()=>openEntry(button.dataset.open)));
+      root.querySelectorAll('[data-detail]').forEach(button => button.addEventListener('click',()=>details(button.dataset.detail)));
+      root.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click',()=>{dismissToast(); button.dataset.nav==='home'?show('home'):details(null);}));
+      root.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click',()=>{
+        switch(button.dataset.action) {
+          case 'home': show('home'); break;
+          case 'dismiss': overlay.hidden=true; state.pending=null; amount.focus(); break;
+          case 'undo': state.records=state.records.filter(r=>r.id!==state.undoId); dismissToast(); updateTotals(); break;
+          case 'confirm': {
+            const raw=amount.value.trim();
+            if(!/^\d+(\.\d{1,2})?$/.test(raw) || !Number.isFinite(Number(raw)) || Number(raw)<=0 || Number(raw)>999999999.99) {
+              root.querySelector('.ce-validation').textContent='请输入大于零、最多两位小数的金额'; amount.focus(); return;
+            }
+            if(!date.validity.valid || !/^\d{4}-\d{2}-\d{2}$/.test(date.value)) { root.querySelector('.ce-validation').textContent='请选择有效日期';date.focus();return; }
+            root.querySelector('.ce-validation').textContent='';
+            state.pending={group:state.current,cents:Math.round(Number(raw)*100),date:date.value,note:note.value};
+            const group=groups[state.current];
+            root.querySelector('.ce-sheet-head h3').textContent=group.name+' · 选择小类';
+            root.querySelector('.ce-sheet-amount').textContent=(group.type==='income'?'+ ¥ ':'− ¥ ')+money(state.pending.cents);
+            root.querySelector('.ce-sheet-amount').classList.toggle('ce-red',group.type==='income');
+            const options=root.querySelector('.ce-options');options.replaceChildren();
+            group.sub.forEach(sub=>{const option=document.createElement('button');option.type='button';option.className='cursor-interaction';option.textContent=sub;option.addEventListener('click',()=>saveRecord(sub));options.appendChild(option);});
+            overlay.hidden=false;options.querySelector('button').focus();break;
+          }
+        }
+      }));
+      overlay.addEventListener('keydown',event=>{
+        if(event.key==='Escape') { overlay.hidden=true;state.pending=null;amount.focus(); }
+        if(event.key==='Tab') {
+          const buttons=Array.from(overlay.querySelectorAll('button'));
+          const first=buttons[0],last=buttons[buttons.length-1];
+          if(event.shiftKey && document.activeElement===first) {event.preventDefault();last.focus();}
+          else if(!event.shiftKey && document.activeElement===last) {event.preventDefault();first.focus();}
+        }
+      });
+      root.querySelectorAll('button').forEach(button=>button.classList.add('cursor-interaction'));
+      if(globalThis.Tweak) {
+        const tweak=new Tweak({container:phone,onChange:()=>{phone.style.setProperty('--ce-radius',state.radius+'px');saveAppearance();}});
+        tweak.addSlider(state,'radius',{label:'大类卡片圆角',min:12,max:28,unit:'px'});
+      }
+    })();
+  </script>
+</div>

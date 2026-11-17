@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="930" viewBox="0 0 960 930" role="img" aria-labelledby="title desc">
+  <title id="title">记账 App 两种账本结构草图</title>
+  <desc id="desc">左边为同一账本包含收入和支出，右边为收入支出分开建立账本。两种方案均采用纵向圆角卡片和底部唯一记账入口。所有金额为示例。</desc>
+  <style>
+    text {font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#171717}
+    .muted {fill:#666}.red {fill:#c72d39}.small {font-size:14px}.body {font-size:17px}.label {font-size:20px}.title {font-size:28px;font-weight:500}.value {font-size:23px;font-weight:500}
+  </style>
+  <rect width="960" height="930" fill="#f4f4f4"/>
+  <text x="48" y="48" class="title">混合账本</text>
+  <text x="518" y="48" class="title">收支分账</text>
+  <text x="48" y="78" class="body muted">一个场景，一本账；内部区分收支</text>
+  <text x="518" y="78" class="body muted">建账本时定类型；整张卡片区分收支</text>
+  <g transform="translate(40 105)">
+    <rect x="0.8" y="0.8" width="409" height="740" rx="34" fill="#fff" stroke="#d0d0d0" stroke-width="1.6"/>
+    <text x="26" y="40" class="small">9:41</text><text x="382" y="40" text-anchor="end" class="small">示意</text>
+    <text x="26" y="100" class="title">账本</text><text x="382" y="98" text-anchor="end" class="body muted">管理</text>
+    <text x="26" y="138" class="small muted">2026年11月 · 全部账本</text>
+    <text x="26" y="177" class="body">支出 ¥ 1,860.00</text><text x="26" y="208" class="body red">收入 ¥ 8,000.00</text>
+    <rect x="22" y="238" width="366" height="155" rx="22" fill="#fff" stroke="#d0d0d0"/>
+    <text x="40" y="275" class="label">个人</text><text x="368" y="273" text-anchor="end" class="small muted">本月</text>
+    <rect x="38" y="295" width="159" height="77" rx="13" fill="#fff" stroke="#171717" stroke-width="1.4"/>
+    <rect x="211" y="295" width="159" height="77" rx="13" fill="#fff" stroke="#c72d39" stroke-width="1.4"/>
+    <text x="51" y="320" class="small">支出</text><text x="51" y="351" class="label">− 1,260.00</text>
+    <text x="224" y="320" class="small red">收入</text><text x="224" y="351" class="label red">+ 8,000.00</text>
+    <rect x="22" y="411" width="366" height="155" rx="22" fill="#fff" stroke="#d0d0d0"/>
+    <text x="40" y="448" class="label">恋爱</text><text x="368" y="446" text-anchor="end" class="small muted">本月</text>
+    <rect x="38" y="468" width="159" height="77" rx="13" fill="#fff" stroke="#171717" stroke-width="1.4"/>
+    <rect x="211" y="468" width="159" height="77" rx="13" fill="#fff" stroke="#c72d39" stroke-width="1.4"/>
+    <text x="51" y="493" class="small">支出</text><text x="51" y="524" class="label">− 600.00</text>
+    <text x="224" y="493" class="small red">收入</text><text x="224" y="524" class="label red">+ 0.00</text>
+    <text x="205" y="610" text-anchor="middle" class="body muted">＋ 新建账本</text>
+    <line x1="22" y1="652" x2="388" y2="652" stroke="#e3e3e3"/>
+    <text x="62" y="699" text-anchor="middle" class="body">账本</text>
+    <rect x="135" y="670" width="140" height="48" rx="24" fill="#171717"/>
+    <text x="205" y="700" text-anchor="middle" class="body" style="fill:#fff">＋ 记一笔</text>
+    <text x="349" y="699" text-anchor="middle" class="body muted">设置</text>
+  </g>
+  <g transform="translate(510 105)">
+    <rect x="0.8" y="0.8" width="409" height="740" rx="34" fill="#fff" stroke="#d0d0d0" stroke-width="1.6"/>
+    <text x="26" y="40" class="small">9:41</text><text x="382" y="40" text-anchor="end" class="small">示意</text>
+    <text x="26" y="100" class="title">账本</text><text x="382" y="98" text-anchor="end" class="body muted">管理</text>
+    <text x="26" y="138" class="small muted">2026年11月 · 全部账本</text>
+    <text x="26" y="177" class="body">支出 ¥ 1,860.00</text><text x="26" y="208" class="body red">收入 ¥ 8,000.00</text>
+    <rect x="22" y="238" width="366" height="100" rx="22" fill="#fff" stroke="#171717" stroke-width="1.4"/>
+    <text x="40" y="273" class="label">个人支出</text><text x="368" y="271" text-anchor="end" class="small">支出</text>
+    <text x="40" y="313" class="value">− ¥ 1,260.00</text><text x="368" y="311" text-anchor="end" class="small muted">本月</text>
+    <rect x="22" y="354" width="366" height="100" rx="22" fill="#fff" stroke="#171717" stroke-width="1.4"/>
+    <text x="40" y="389" class="label">恋爱支出</text><text x="368" y="387" text-anchor="end" class="small">支出</text>
+    <text x="40" y="429" class="value">− ¥ 600.00</text><text x="368" y="427" text-anchor="end" class="small muted">本月</text>
+    <rect x="22" y="470" width="366" height="100" rx="22" fill="#fff" stroke="#c72d39" stroke-width="1.4"/>
+    <text x="40" y="505" class="label">个人收入</text><text x="368" y="503" text-anchor="end" class="small red">收入</text>
+    <text x="40" y="545" class="value red">+ ¥ 8,000.00</text><text x="368" y="543" text-anchor="end" class="small muted">本月</text>
+    <text x="205" y="610" text-anchor="middle" class="body muted">＋ 新建账本</text>
+    <line x1="22" y1="652" x2="388" y2="652" stroke="#e3e3e3"/>
+    <text x="62" y="699" text-anchor="middle" class="body">账本</text>
+    <rect x="135" y="670" width="140" height="48" rx="24" fill="#171717"/>
+    <text x="205" y="700" text-anchor="middle" class="body" style="fill:#fff">＋ 记一笔</text>
+    <text x="349" y="699" text-anchor="middle" class="body muted">设置</text>
+  </g>
+  <text x="48" y="887" class="body muted">需求草图 v0.1 · 布局与结构待确认 · 金额为演示数据</text>
+</svg>

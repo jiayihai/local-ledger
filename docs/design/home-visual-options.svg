@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1010" viewBox="0 0 960 1010" role="img" aria-labelledby="title desc">
+  <title id="title">记账首页的留白卡片与紧凑分区视觉方案</title>
+  <desc id="desc">两版均为纵向圆角矩形卡片。个人和恋爱支出黑框，收入红框，卡片包含名称、本月累计和明细入口。留白卡片将名称、金额纵向排列，紧凑分区将名称与金额横向排列。数据均为示例。</desc>
+  <style>text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#191919;font-weight:400}.quiet{fill:#666}.red{fill:#c72d39}.small{font-size:14px}.body{font-size:17px}.label{font-size:20px;font-weight:500}.title{font-size:29px;font-weight:500}.value{font-size:29px;font-weight:500}.dense-value{font-size:23px;font-weight:500}</style>
+  <rect width="960" height="1010" fill="#f0f0f0"/>
+  <text x="40" y="47" class="title">留白卡片</text><text x="510" y="47" class="title">紧凑分区</text>
+  <text x="40" y="79" class="body quiet">金额突出 · 层次柔和</text><text x="510" y="79" class="body quiet">排列紧凑 · 便于快速选择</text>
+  <g transform="translate(40 109)">
+    <rect x="1" y="1" width="408" height="788" rx="34" fill="#f6f6f6" stroke="#d0d0d0"/>
+    <text x="25" y="36" class="small">9:41</text><text x="382" y="36" text-anchor="end" class="small quiet">示意</text>
+    <text x="25" y="96" class="title">记账</text><text x="382" y="94" text-anchor="end" class="small quiet">本地总账</text>
+    <text x="25" y="132" class="small quiet">2026年11月</text>
+    <text x="25" y="173" class="small quiet">本月支出</text><text x="230" y="173" class="small quiet">本月收入</text>
+    <text x="25" y="205" class="dense-value">¥ 1,860.00</text><text x="230" y="205" class="dense-value red">¥ 8,000.00</text>
+    <rect x="22" y="232" width="366" height="122" rx="24" fill="#fff" stroke="#191919" stroke-width="1.3"/>
+    <text x="42" y="267" class="label">个人</text><text x="42" y="291" class="small quiet">本月支出</text><text x="42" y="329" class="value">1,260.00</text><text x="369" y="299" text-anchor="end" class="small quiet">明细 ›</text>
+    <rect x="22" y="370" width="366" height="122" rx="24" fill="#fff" stroke="#191919" stroke-width="1.3"/>
+    <text x="42" y="405" class="label">恋爱</text><text x="42" y="429" class="small quiet">本月支出</text><text x="42" y="467" class="value">600.00</text><text x="369" y="437" text-anchor="end" class="small quiet">明细 ›</text>
+    <rect x="22" y="508" width="366" height="122" rx="24" fill="#fff" stroke="#c72d39" stroke-width="1.3"/>
+    <text x="42" y="543" class="label">收入</text><text x="42" y="567" class="small quiet">本月收入</text><text x="42" y="605" class="value red">8,000.00</text><text x="369" y="575" text-anchor="end" class="small quiet">明细 ›</text>
+    <text x="205" y="675" text-anchor="middle" class="body quiet">＋ 新建大类</text>
+    <path d="M1 710H409V755Q409 789 375 789H35Q1 789 1 755Z" fill="#fff"/>
+    <line x1="1" y1="710" x2="409" y2="710" stroke="#e4e4e4"/>
+    <text x="70" y="754" text-anchor="middle" class="body">记账</text><text x="205" y="754" text-anchor="middle" class="body quiet">明细</text><text x="340" y="754" text-anchor="middle" class="body quiet">设置</text>
+  </g>
+  <g transform="translate(510 109)">
+    <rect x="1" y="1" width="408" height="788" rx="34" fill="#fff" stroke="#d0d0d0"/>
+    <text x="25" y="36" class="small">9:41</text><text x="382" y="36" text-anchor="end" class="small quiet">示意</text>
+    <text x="25" y="96" class="title">记账</text><text x="382" y="94" text-anchor="end" class="small quiet">本地总账</text>
+    <text x="25" y="132" class="small quiet">2026年11月</text>
+    <text x="25" y="173" class="small quiet">本月支出</text><text x="230" y="173" class="small quiet">本月收入</text>
+    <text x="25" y="205" class="dense-value">¥ 1,860.00</text><text x="230" y="205" class="dense-value red">¥ 8,000.00</text>
+    <line x1="22" y1="224" x2="388" y2="224" stroke="#e4e4e4"/>
+    <rect x="22" y="248" width="366" height="94" rx="18" fill="#fff" stroke="#191919" stroke-width="1.5"/>
+    <text x="39" y="285" class="label">个人</text><text x="39" y="312" class="small quiet">本月支出</text><text x="309" y="301" text-anchor="end" class="dense-value">1,260.00</text><text x="371" y="300" text-anchor="end" class="small quiet">明细 ›</text>
+    <rect x="22" y="354" width="366" height="94" rx="18" fill="#fff" stroke="#191919" stroke-width="1.5"/>
+    <text x="39" y="391" class="label">恋爱</text><text x="39" y="418" class="small quiet">本月支出</text><text x="309" y="407" text-anchor="end" class="dense-value">600.00</text><text x="371" y="406" text-anchor="end" class="small quiet">明细 ›</text>
+    <rect x="22" y="460" width="366" height="94" rx="18" fill="#fff" stroke="#c72d39" stroke-width="1.5"/>
+    <text x="39" y="497" class="label">收入</text><text x="39" y="524" class="small quiet">本月收入</text><text x="309" y="513" text-anchor="end" class="dense-value red">8,000.00</text><text x="371" y="512" text-anchor="end" class="small quiet">明细 ›</text>
+    <text x="26" y="599" class="body quiet">＋ 新建大类</text>
+    <line x1="1" y1="710" x2="409" y2="710" stroke="#e4e4e4"/>
+    <text x="70" y="754" text-anchor="middle" class="body">记账</text><text x="205" y="754" text-anchor="middle" class="body quiet">明细</text><text x="340" y="754" text-anchor="middle" class="body quiet">设置</text>
+  </g>
+  <text x="40" y="949" class="body">两种方案使用相同功能与记账流程，可组合喜欢的细节。</text>
+  <text x="40" y="981" class="small quiet">需求讨论稿 v0.4 · 金额均为示例 · 视觉与页面安排待确认</text>
+</svg>

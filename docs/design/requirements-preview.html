@@ -1,0 +1,222 @@
+<div id="ledger-requirements-v1">
+  <style>
+    #ledger-requirements-v1 .ledger-stage { display:flex; justify-content:center; align-items:flex-start; padding:18px 8px; min-height:772px; box-sizing:border-box }
+    #ledger-requirements-v1 .ledger-phone { --ink:#171717; --red:#c72d39; --paper:#fff; --quiet:#666; --line:#e4e4e4; --round:22px; position:relative; isolation:isolate; width:100%; max-width:390px; min-width:0; height:736px; box-sizing:border-box; border:1px solid #d0d0d0; border-radius:34px; background:var(--paper); color:var(--ink); overflow:hidden; box-shadow:0 12px 36px #0000000a; font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei",sans-serif; font-size:15px; line-height:1.5 }
+    #ledger-requirements-v1 .ledger-phone * { box-sizing:border-box }
+    #ledger-requirements-v1 .ledger-phone [hidden] { display:none !important }
+    #ledger-requirements-v1 .ledger-phone button { font:inherit; min-height:44px; background:var(--paper); color:var(--ink); border:0; padding:8px 12px }
+    #ledger-requirements-v1 .ledger-phone button:focus-visible { outline:2px solid var(--ink); outline-offset:2px }
+    #ledger-requirements-v1 .ledger-status { display:flex; justify-content:space-between; padding:17px 24px 10px; font-size:12px }
+    #ledger-requirements-v1 .ledger-main { padding:10px 22px 108px }
+    #ledger-requirements-v1 .ledger-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px }
+    #ledger-requirements-v1 .ledger-heading h2 { font-size:30px; font-weight:500; margin:0 }
+    #ledger-requirements-v1 .ledger-quiet { color:var(--quiet); font-size:13px }
+    #ledger-requirements-v1 .ledger-period { margin:0 0 16px }
+    #ledger-requirements-v1 .ledger-summary { display:flex; flex-direction:column; gap:5px; margin-bottom:22px; font-variant-numeric:tabular-nums }
+    #ledger-requirements-v1 .ledger-red { color:var(--red) }
+    #ledger-requirements-v1 .ledger-books { display:flex; flex-direction:column; gap:14px }
+    #ledger-requirements-v1 .ledger-book { border:1px solid #d0d0d0; border-radius:var(--round); padding:16px }
+    #ledger-requirements-v1 .ledger-book-top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:13px }
+    #ledger-requirements-v1 .ledger-book-name { font-size:19px; font-weight:500 }
+    #ledger-requirements-v1 .ledger-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px }
+    #ledger-requirements-v1 .ledger-measure { border:1.3px solid var(--ink); border-radius:13px; padding:10px 9px; display:flex; flex-direction:column; gap:4px; font-variant-numeric:tabular-nums }
+    #ledger-requirements-v1 .ledger-measure.income { border-color:var(--red); color:var(--red) }
+    #ledger-requirements-v1 .ledger-measure .ledger-number { font-size:18px; font-weight:500; white-space:nowrap }
+    #ledger-requirements-v1 .ledger-book.expense { border:1.3px solid var(--ink) }
+    #ledger-requirements-v1 .ledger-book.income { border:1.3px solid var(--red) }
+    #ledger-requirements-v1 .ledger-book-total { display:flex; justify-content:space-between; align-items:center; gap:8px }
+    #ledger-requirements-v1 .ledger-book-total strong { font-size:22px; font-weight:500; font-variant-numeric:tabular-nums }
+    #ledger-requirements-v1 .ledger-new { text-align:center; padding:22px 0; color:var(--quiet) }
+    #ledger-requirements-v1 .ledger-nav { position:absolute; bottom:0; left:18px; right:18px; border-top:1px solid var(--line); padding:15px 0 23px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--paper) }
+    #ledger-requirements-v1 .ledger-nav .ledger-add, #ledger-requirements-v1 .ledger-phone .ledger-primary { background:var(--ink); color:var(--paper); border-radius:24px; padding:10px 24px; font-weight:500 }
+    #ledger-requirements-v1 .ledger-scrim { position:absolute; inset:0; background:#00000033; display:flex; align-items:flex-end }
+    #ledger-requirements-v1 .ledger-sheet { width:100%; background:var(--paper); border-radius:28px 28px 0 0; padding:13px 22px 27px; box-shadow:0 -8px 30px #0000000c }
+    #ledger-requirements-v1 .ledger-handle { width:36px; height:4px; border-radius:4px; background:#d0d0d0; margin:0 auto 12px }
+    #ledger-requirements-v1 .ledger-sheet-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:16px }
+    #ledger-requirements-v1 .ledger-sheet-head h3 { font-size:21px; font-weight:500; margin:0 }
+    #ledger-requirements-v1 .ledger-type, #ledger-requirements-v1 .ledger-choices { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px }
+    #ledger-requirements-v1 .ledger-type button, #ledger-requirements-v1 .ledger-choices button { border:1px solid var(--line); border-radius:13px; flex:1; min-width:72px }
+    #ledger-requirements-v1 .ledger-type [aria-pressed="true"], #ledger-requirements-v1 .ledger-choices [aria-pressed="true"] { border-color:var(--ink); background:#f2f2f2 }
+    #ledger-requirements-v1 .ledger-type [data-kind="income"][aria-pressed="true"] { color:var(--red); border-color:var(--red) }
+    #ledger-requirements-v1 .ledger-field { display:flex; flex-direction:column; gap:7px; margin-bottom:16px }
+    #ledger-requirements-v1 .ledger-field input { width:100%; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:13px; padding:12px; font:inherit; font-size:16px }
+    #ledger-requirements-v1 .ledger-field input[name="amount"] { font-size:30px; font-variant-numeric:tabular-nums }
+    #ledger-requirements-v1 .ledger-full { width:100%; margin-top:8px }
+    #ledger-requirements-v1 .ledger-label { display:block; margin-bottom:8px; font-size:13px; color:var(--quiet) }
+    #ledger-requirements-v1 .ledger-review { font-size:24px; font-variant-numeric:tabular-nums; margin:0 0 18px }
+    #ledger-requirements-v1 .ledger-feedback { color:var(--quiet); font-size:13px; min-height:22px; margin:8px 0 0 }
+    @media(max-width:370px) { #ledger-requirements-v1 .ledger-stage { padding-left:0; padding-right:0 } #ledger-requirements-v1 .ledger-main { padding-left:16px; padding-right:16px } #ledger-requirements-v1 .ledger-book { padding:13px } #ledger-requirements-v1 .ledger-measure { padding:9px 7px } #ledger-requirements-v1 .ledger-measure .ledger-number { font-size:16px } #ledger-requirements-v1 .ledger-sheet { padding-left:16px; padding-right:16px } }
+  </style>
+  <div class="viz-carousel viz-dotted-background" aria-label="账本结构草图，金额为演示数据" data-previous-label="上一方案" data-next-label="下一方案">
+    <section data-variant="混合账本" aria-label="同一账本同时记录收支">
+      <div class="ledger-stage">
+        <div class="ledger-phone" data-layout="mixed" aria-label="混合账本界面">
+          <div class="ledger-status"><span>9:41</span><span>需求草图 · 示例</span></div>
+          <div class="ledger-main">
+            <div class="ledger-heading"><h2>账本</h2><span class="ledger-quiet">管理</span></div>
+            <p class="ledger-period ledger-quiet">2026年11月 · 全部账本</p>
+            <div class="ledger-summary"><span>支出 ¥ 1,860.00</span><span class="ledger-red">收入 ¥ 8,000.00</span></div>
+            <div class="ledger-books">
+              <div class="ledger-book"><div class="ledger-book-top"><span class="ledger-book-name">个人</span><span class="ledger-quiet">本月</span></div><div class="ledger-pair"><div class="ledger-measure"><span class="ledger-quiet">支出</span><span class="ledger-number">− 1,260.00</span></div><div class="ledger-measure income"><span>收入</span><span class="ledger-number">+ 8,000.00</span></div></div></div>
+              <div class="ledger-book"><div class="ledger-book-top"><span class="ledger-book-name">恋爱</span><span class="ledger-quiet">本月</span></div><div class="ledger-pair"><div class="ledger-measure"><span class="ledger-quiet">支出</span><span class="ledger-number">− 600.00</span></div><div class="ledger-measure income"><span>收入</span><span class="ledger-number">+ 0.00</span></div></div></div>
+            </div>
+            <div class="ledger-new">＋ 新建账本</div>
+          </div>
+          <div class="ledger-nav"><span>账本</span><button class="ledger-add" type="button">＋ 记一笔</button><span class="ledger-quiet">设置</span></div>
+          <div class="ledger-sheet-mount"></div>
+        </div>
+      </div>
+    </section>
+    <section data-variant="收支分账" aria-label="收入和支出分别建立账本" hidden>
+      <div class="ledger-stage">
+        <div class="ledger-phone" data-layout="split" aria-label="收支分账界面">
+          <div class="ledger-status"><span>9:41</span><span>需求草图 · 示例</span></div>
+          <div class="ledger-main">
+            <div class="ledger-heading"><h2>账本</h2><span class="ledger-quiet">管理</span></div>
+            <p class="ledger-period ledger-quiet">2026年11月 · 全部账本</p>
+            <div class="ledger-summary"><span>支出 ¥ 1,860.00</span><span class="ledger-red">收入 ¥ 8,000.00</span></div>
+            <div class="ledger-books">
+              <div class="ledger-book expense"><div class="ledger-book-top"><span class="ledger-book-name">个人支出</span><span class="ledger-quiet">支出</span></div><div class="ledger-book-total"><strong>− ¥ 1,260.00</strong><span class="ledger-quiet">本月</span></div></div>
+              <div class="ledger-book expense"><div class="ledger-book-top"><span class="ledger-book-name">恋爱支出</span><span class="ledger-quiet">支出</span></div><div class="ledger-book-total"><strong>− ¥ 600.00</strong><span class="ledger-quiet">本月</span></div></div>
+              <div class="ledger-book income"><div class="ledger-book-top"><span class="ledger-book-name">个人收入</span><span class="ledger-red">收入</span></div><div class="ledger-book-total"><strong class="ledger-red">+ ¥ 8,000.00</strong><span class="ledger-quiet">本月</span></div></div>
+            </div>
+            <div class="ledger-new">＋ 新建账本</div>
+          </div>
+          <div class="ledger-nav"><span>账本</span><button class="ledger-add" type="button">＋ 记一笔</button><span class="ledger-quiet">设置</span></div>
+          <div class="ledger-sheet-mount"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <template id="ledger-entry-template-v1">
+    <div class="ledger-scrim" hidden>
+      <section class="ledger-sheet" role="dialog" aria-label="记一笔流程演示">
+        <div class="ledger-handle"></div>
+        <div class="ledger-sheet-head"><h3 class="ledger-step-title">记一笔</h3><button type="button" data-action="close" aria-label="关闭记账演示">关闭</button></div>
+        <div data-step="amount">
+          <div class="ledger-type" aria-label="收支类型"><button type="button" data-kind="expense" aria-pressed="true">支出</button><button type="button" data-kind="income" aria-pressed="false">收入</button></div>
+          <label class="ledger-field"><span>金额 · 元</span><input name="amount" inputmode="decimal" value="38.00" autocomplete="off" aria-label="金额，单位元" /></label>
+          <label class="ledger-field"><span class="ledger-quiet">备注（可选）</span><input name="note" value="午餐" maxlength="100" autocomplete="off" /></label>
+          <button type="button" class="ledger-primary ledger-full" data-action="next">下一步 · 选择分类</button>
+        </div>
+        <div data-step="classify" hidden>
+          <p class="ledger-review"></p>
+          <span class="ledger-label">放入哪个账本</span><div class="ledger-choices ledger-book-choices"></div>
+          <span class="ledger-label">选择小分类</span><div class="ledger-choices ledger-category-choices"></div>
+          <button type="button" class="ledger-primary ledger-full" data-action="save">保存</button>
+          <button type="button" class="ledger-full" data-action="back">返回修改金额</button>
+        </div>
+        <div data-step="done" hidden><p class="ledger-review">示例流程完成</p><p class="ledger-saved-detail"></p><button type="button" class="ledger-primary ledger-full" data-action="close">回到账本</button></div>
+        <p class="ledger-feedback" aria-live="polite">仅演示操作；不会写入真实账目</p>
+      </section>
+    </div>
+  </template>
+  <script>
+    (() => {
+      const root = document.getElementById('ledger-requirements-v1');
+      const template = document.getElementById('ledger-entry-template-v1');
+      const initialSaved = window.openai && window.openai.widgetState;
+      const preferences = initialSaved && initialSaved.privateContent && initialSaved.privateContent.previews || {};
+      const restorers = [];
+      root.querySelectorAll('.ledger-phone').forEach(phone => {
+        phone.querySelector('.ledger-sheet-mount').appendChild(template.content.cloneNode(true));
+        const overlay = phone.querySelector('.ledger-scrim');
+        const feedback = phone.querySelector('.ledger-feedback');
+        const amount = phone.querySelector('[name="amount"]');
+        const state = { kind:'expense', book:'个人', category:'饮食', radius:22, step:'amount' };
+        const categories = {
+          expense: { '个人':['饮食','娱乐','会员'], '恋爱':['饮食','娱乐','礼物'] },
+          income: { '个人':['工资','奖金','其他收入'], '恋爱':['其他收入'] }
+        };
+        const persist = () => {
+          preferences[phone.dataset.layout] = {kind:state.kind,book:state.book,category:state.category,radius:state.radius};
+          if (window.openai && typeof window.openai.setWidgetState === 'function') {
+            const pending = window.openai.setWidgetState({modelContent:{illustrationOnly:true},privateContent:{previews:preferences}});
+            if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+          }
+        };
+        function restore(saved) {
+          if (!saved || typeof saved !== 'object') return;
+          state.kind = saved.kind === 'income' ? 'income' : 'expense';
+          state.book = saved.book === '恋爱' ? '恋爱' : '个人';
+          if (typeof saved.category === 'string') state.category = saved.category;
+          if (Number.isFinite(saved.radius)) state.radius = Math.min(28, Math.max(12, saved.radius));
+          phone.style.setProperty('--round', state.radius + 'px');
+          phone.querySelectorAll('[data-kind]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.kind === state.kind)));
+          if (state.step === 'classify') drawChoices();
+        }
+        restore(preferences[phone.dataset.layout]);
+        restorers.push(snapshot => restore(snapshot && snapshot[phone.dataset.layout]));
+        function showStep(step) {
+          state.step = step;
+          phone.querySelectorAll('[data-step]').forEach(el => el.hidden = el.dataset.step !== step);
+          phone.querySelector('.ledger-step-title').textContent = step === 'classify' ? '归入账本与分类' : step === 'done' ? '完成' : '记一笔';
+          feedback.textContent = '仅演示操作；不会写入真实账目';
+        }
+        function drawChoices() {
+          const isIncome = state.kind === 'income';
+          const books = phone.dataset.layout === 'split' && isIncome ? ['个人'] : ['个人','恋爱'];
+          if (!books.includes(state.book)) state.book = books[0];
+          const names = categories[state.kind][state.book];
+          if (!names.includes(state.category)) state.category = names[0];
+          const draw = (selector, values, selected, handler, label) => {
+            const mount = phone.querySelector(selector);
+            mount.replaceChildren();
+            values.forEach(value => {
+              const button = document.createElement('button');
+              button.type = 'button';
+              button.className = 'cursor-interaction';
+              button.textContent = label(value);
+              button.setAttribute('aria-pressed', String(value === selected));
+              button.addEventListener('click', () => { handler(value); drawChoices(); persist(); });
+              mount.appendChild(button);
+            });
+          };
+          draw('.ledger-book-choices', books, state.book, value => { state.book = value; }, value => phone.dataset.layout === 'split' ? value + (isIncome ? '收入' : '支出') : value);
+          draw('.ledger-category-choices', names, state.category, value => { state.category = value; }, value => value);
+          const review = phone.querySelector('.ledger-review');
+          review.textContent = (isIncome ? '收入 + ¥ ' : '支出 − ¥ ') + Number(amount.value).toFixed(2);
+          review.classList.toggle('ledger-red', isIncome);
+        }
+        phone.querySelector('.ledger-add').addEventListener('click', () => { overlay.hidden = false; showStep('amount'); persist(); });
+        phone.querySelectorAll('[data-kind]').forEach(button => button.addEventListener('click', () => {
+          state.kind = button.dataset.kind;
+          phone.querySelectorAll('[data-kind]').forEach(el => el.setAttribute('aria-pressed', String(el === button)));
+          persist();
+        }));
+        phone.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
+          switch (button.dataset.action) {
+            case 'close': overlay.hidden = true; phone.querySelector('.ledger-add').focus(); break;
+            case 'back': showStep('amount'); break;
+            case 'next': {
+              const raw = amount.value.trim();
+              if (!/^\d+(\.\d{1,2})?$/.test(raw) || !Number.isFinite(Number(raw)) || Number(raw) <= 0 || Number(raw) > 999999999.99) {
+                feedback.textContent = '请输入有效金额，最多两位小数'; amount.focus(); return;
+              }
+              showStep('classify'); drawChoices(); break;
+            }
+            case 'save': {
+              const bookName = state.book + (phone.dataset.layout === 'split' ? (state.kind === 'income' ? '收入' : '支出') : '');
+              phone.querySelector('.ledger-saved-detail').textContent = bookName + ' / ' + state.category + ' / ¥ ' + Number(amount.value).toFixed(2);
+              showStep('done'); break;
+            }
+          }
+          persist();
+        }));
+        overlay.addEventListener('keydown', event => { if (event.key === 'Escape') { overlay.hidden = true; phone.querySelector('.ledger-add').focus(); } });
+        if (globalThis.Tweak) {
+          const tweak = new Tweak({ container:phone, onChange:() => { phone.style.setProperty('--round', state.radius + 'px'); persist(); } });
+          tweak.addSlider(state, 'radius', { label:'卡片圆角', min:12, max:28, unit:'px' });
+        }
+        phone.querySelectorAll('button').forEach(button => button.classList.add('cursor-interaction'));
+      });
+      window.addEventListener('openai:set_globals', event => {
+        const saved = event.detail && event.detail.globals && event.detail.globals.widgetState;
+        if (saved && saved.privateContent && saved.privateContent.previews) {
+          Object.assign(preferences, saved.privateContent.previews);
+          restorers.forEach(restore => restore(preferences));
+        }
+      });
+    })();
+  </script>
+</div>

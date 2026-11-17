@@ -1,0 +1,148 @@
+<div id="ledger-visual-v4">
+  <style>
+    #ledger-visual-v4 .lv-stage{display:flex;justify-content:center;padding:18px 6px;min-height:814px;box-sizing:border-box}
+    #ledger-visual-v4 .lv-phone{--lv-ink:#191919;--lv-paper:#fff;--lv-bg:#f6f6f6;--lv-red:#c72d39;--lv-quiet:#666;--lv-line:#e4e4e4;--lv-radius:24px;--lv-border:1.3px;position:relative;isolation:isolate;width:100%;max-width:390px;height:778px;border:1px solid #d2d2d2;border-radius:34px;background:var(--lv-bg);color:var(--lv-ink);overflow:hidden;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Microsoft YaHei",sans-serif;box-shadow:0 12px 34px #0000000a}
+    #ledger-visual-v4 .lv-phone *{box-sizing:border-box}
+    #ledger-visual-v4 .lv-phone [hidden]{display:none!important}
+    #ledger-visual-v4 .lv-phone button{font:inherit;color:inherit;background:transparent;border:0;padding:10px 12px;min-height:44px}
+    #ledger-visual-v4 .lv-phone button:focus-visible{outline:2px solid var(--lv-ink);outline-offset:2px}
+    #ledger-visual-v4 .lv-status{display:flex;justify-content:space-between;padding:16px 22px 10px;font-size:12px}
+    #ledger-visual-v4 .lv-page{padding:6px 22px 96px}
+    #ledger-visual-v4 .lv-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+    #ledger-visual-v4 .lv-title{font-size:31px;font-weight:500;margin:0}
+    #ledger-visual-v4 .lv-quiet{color:var(--lv-quiet);font-size:13px}
+    #ledger-visual-v4 .lv-red{color:var(--lv-red)}
+    #ledger-visual-v4 .lv-period{margin:0 0 17px}
+    #ledger-visual-v4 .lv-summary{display:flex;justify-content:space-between;gap:14px;margin-bottom:23px}
+    #ledger-visual-v4 .lv-summary div{display:flex;flex-direction:column;gap:4px}
+    #ledger-visual-v4 .lv-summary strong{font-size:23px;font-weight:500;font-variant-numeric:tabular-nums}
+    #ledger-visual-v4 .lv-cards{display:flex;flex-direction:column;gap:16px}
+    #ledger-visual-v4 .lv-card{display:grid;grid-template-columns:minmax(0,1fr) 68px;border:var(--lv-border) solid var(--lv-ink);border-radius:var(--lv-radius);background:var(--lv-paper);overflow:hidden;box-shadow:0 5px 14px #00000004}
+    #ledger-visual-v4 .lv-card[data-kind="income"]{border-color:var(--lv-red)}
+    #ledger-visual-v4 .lv-card .lv-open{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:6px;padding:14px 18px;min-width:0}
+    #ledger-visual-v4 .lv-name{font-size:19px;font-weight:500}
+    #ledger-visual-v4 .lv-card-caption{font-size:12px;color:var(--lv-quiet)}
+    #ledger-visual-v4 .lv-card-value{font-size:27px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+    #ledger-visual-v4 .lv-card .lv-detail{align-self:center;margin-right:4px;font-size:13px;color:var(--lv-quiet);padding-left:4px;padding-right:4px}
+    #ledger-visual-v4 .lv-new{text-align:center;padding:18px 0 0}
+    #ledger-visual-v4 .lv-nav{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around;gap:8px;background:var(--lv-paper);border-top:1px solid var(--lv-line);padding:13px 12px 22px}
+    #ledger-visual-v4 .lv-nav [aria-current="page"]{font-weight:500}
+    #ledger-visual-v4 .lv-nav button:not([aria-current]){color:var(--lv-quiet)}
+    #ledger-visual-v4 .lv-row-head{margin:19px 0 9px;font-size:13px;color:var(--lv-quiet)}
+    #ledger-visual-v4 .lv-records{display:flex;flex-direction:column;gap:12px}
+    #ledger-visual-v4 .lv-record{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 14px;background:var(--lv-paper);border:var(--lv-border) solid var(--lv-ink);border-radius:18px}
+    #ledger-visual-v4 .lv-record[data-kind="income"]{border-color:var(--lv-red)}
+    #ledger-visual-v4 .lv-record div{display:flex;flex-direction:column;gap:4px;min-width:0}
+    #ledger-visual-v4 .lv-record-value{font-size:19px;white-space:nowrap;font-variant-numeric:tabular-nums}
+    #ledger-visual-v4 .lv-settings{background:var(--lv-paper);border:1px solid var(--lv-line);border-radius:var(--lv-radius);padding:2px 16px;margin-top:18px}
+    #ledger-visual-v4 .lv-setting{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 0;border-bottom:1px solid var(--lv-line)}
+    #ledger-visual-v4 .lv-setting:last-child{border-bottom:0}
+    #ledger-visual-v4 .lv-setting div{display:flex;flex-direction:column;gap:4px}
+    #ledger-visual-v4 .lv-page-note{margin:16px 0 0;color:var(--lv-quiet);font-size:13px}
+    #ledger-visual-v4 .lv-entry-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:22px}
+    #ledger-visual-v4 .lv-entry-name{font-size:22px;font-weight:500;margin:0}
+    #ledger-visual-v4 .lv-field{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+    #ledger-visual-v4 .lv-phone input{width:100%;min-width:0;padding:12px;border:1px solid var(--lv-line);border-radius:14px;background:var(--lv-paper);color:var(--lv-ink);font:inherit;font-size:16px}
+    #ledger-visual-v4 .lv-phone input[name="amount"]{font-size:39px;font-weight:500;border:0;border-bottom:1px solid var(--lv-line);border-radius:0;background:transparent;padding-left:0}
+    #ledger-visual-v4 .lv-phone .lv-confirm{width:100%;border-radius:23px;background:var(--lv-ink);color:var(--lv-paper);padding:12px 20px}
+    #ledger-visual-v4 .lv-phone[data-kind="income"] .lv-confirm{background:var(--lv-red)}
+    #ledger-visual-v4 .lv-feedback{min-height:22px;margin:12px 0 0;color:var(--lv-quiet);font-size:13px}
+    #ledger-visual-v4 .lv-overlay{position:absolute;inset:0;background:#00000030;display:flex;align-items:flex-end}
+    #ledger-visual-v4 .lv-sheet{width:100%;background:var(--lv-paper);padding:13px 22px 28px;border-radius:28px 28px 0 0}
+    #ledger-visual-v4 .lv-handle{width:36px;height:4px;background:#ccc;border-radius:4px;margin:0 auto 12px}
+    #ledger-visual-v4 .lv-sheet h3{font-size:20px;font-weight:500;margin:0}
+    #ledger-visual-v4 .lv-sheet-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    #ledger-visual-v4 .lv-chosen-amount{font-size:27px;font-variant-numeric:tabular-nums;margin:12px 0 18px}
+    #ledger-visual-v4 .lv-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+    #ledger-visual-v4 .lv-choices button{border:1px solid var(--lv-ink);border-radius:14px;padding:13px 4px;min-width:0}
+    #ledger-visual-v4 .lv-phone[data-kind="income"] .lv-choices button{border-color:var(--lv-red);color:var(--lv-red)}
+    #ledger-visual-v4 .lv-notice{position:absolute;left:20px;right:20px;bottom:96px;border-radius:15px;background:var(--lv-ink);color:var(--lv-paper);padding:13px 15px;font-size:13px;box-shadow:0 5px 16px #00000014}
+    #ledger-visual-v4 .lv-phone.lv-compact{--lv-bg:#fff;--lv-radius:18px;--lv-border:1.5px}
+    #ledger-visual-v4 .lv-compact .lv-title{font-size:27px}
+    #ledger-visual-v4 .lv-compact .lv-summary{margin-bottom:25px;padding-bottom:20px;border-bottom:1px solid var(--lv-line)}
+    #ledger-visual-v4 .lv-compact .lv-summary strong{font-size:21px}
+    #ledger-visual-v4 .lv-compact .lv-cards{gap:12px}
+    #ledger-visual-v4 .lv-compact .lv-card{grid-template-columns:minmax(0,1fr) 62px;box-shadow:none}
+    #ledger-visual-v4 .lv-compact .lv-card .lv-open{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:12px;row-gap:3px;padding:19px 13px}
+    #ledger-visual-v4 .lv-compact .lv-name{grid-column:1;grid-row:1;font-size:18px}
+    #ledger-visual-v4 .lv-compact .lv-card-caption{grid-column:1;grid-row:2}
+    #ledger-visual-v4 .lv-compact .lv-card-value{grid-column:2;grid-row:1 / span 2;font-size:21px;text-align:right}
+    #ledger-visual-v4 .lv-compact .lv-record{border-radius:14px;padding:13px 12px}
+    #ledger-visual-v4 .lv-compact .lv-new{text-align:left;padding-top:15px}
+    @media(max-width:370px){#ledger-visual-v4 .lv-stage{padding-left:0;padding-right:0}#ledger-visual-v4 .lv-page{padding-left:16px;padding-right:16px}#ledger-visual-v4 .lv-card-value{font-size:24px}#ledger-visual-v4 .lv-summary strong{font-size:21px}#ledger-visual-v4 .lv-compact .lv-card .lv-open{column-gap:6px;padding-left:11px;padding-right:7px}#ledger-visual-v4 .lv-compact .lv-card-value{font-size:18px}#ledger-visual-v4 .lv-compact .lv-name{font-size:17px}#ledger-visual-v4 .lv-sheet{padding-left:16px;padding-right:16px}}
+  </style>
+  <div class="viz-carousel viz-dotted-background" aria-label="记账 App 视觉方向" data-previous-label="上一方案" data-next-label="下一方案">
+    <section data-variant="留白卡片" aria-label="留白卡片视觉方案"><div class="lv-stage"><div class="lv-phone" data-design="spacious" aria-label="留白卡片方案界面"></div></div></section>
+    <section data-variant="紧凑分区" aria-label="紧凑分区视觉方案" hidden><div class="lv-stage"><div class="lv-phone lv-compact" data-design="compact" aria-label="紧凑分区方案界面"></div></div></section>
+  </div>
+  <template id="ledger-visual-template-v4">
+    <div class="lv-status"><span>9:41</span><span>需求原型 · 示例数据</span></div>
+    <section class="lv-page" data-page="home">
+      <div class="lv-header"><h2 class="lv-title">记账</h2><span class="lv-quiet">本地总账</span></div><p class="lv-period lv-quiet">2026年11月</p>
+      <div class="lv-summary"><div><span class="lv-quiet">本月支出</span><strong data-sum="expense">¥ 1,860.00</strong></div><div><span class="lv-quiet">本月收入</span><strong class="lv-red" data-sum="income">¥ 8,000.00</strong></div></div>
+      <div class="lv-cards">
+        <div class="lv-card" data-kind="expense"><button type="button" class="lv-open" data-entry="personal"><span class="lv-name">个人</span><span class="lv-card-caption">本月支出</span><span class="lv-card-value" data-value="personal">1,260.00</span></button><button type="button" class="lv-detail" data-detail="personal" aria-label="查看个人明细">明细 ›</button></div>
+        <div class="lv-card" data-kind="expense"><button type="button" class="lv-open" data-entry="love"><span class="lv-name">恋爱</span><span class="lv-card-caption">本月支出</span><span class="lv-card-value" data-value="love">600.00</span></button><button type="button" class="lv-detail" data-detail="love" aria-label="查看恋爱明细">明细 ›</button></div>
+        <div class="lv-card" data-kind="income"><button type="button" class="lv-open" data-entry="income"><span class="lv-name">收入</span><span class="lv-card-caption">本月收入</span><span class="lv-card-value lv-red" data-value="income">8,000.00</span></button><button type="button" class="lv-detail" data-detail="income" aria-label="查看收入明细">明细 ›</button></div>
+      </div><div class="lv-new lv-quiet">＋ 新建大类</div>
+    </section>
+    <section class="lv-page" data-page="details" hidden>
+      <div class="lv-header"><h2 class="lv-title lv-detail-title">明细</h2><button type="button" data-home>返回</button></div><p class="lv-period lv-quiet">2026年11月 · 示例记录</p><div class="lv-records"></div><p class="lv-page-note">记录支持修改、删除与撤销</p>
+    </section>
+    <section class="lv-page" data-page="settings" hidden>
+      <div class="lv-header"><h2 class="lv-title">设置</h2><span class="lv-quiet">本地保存</span></div>
+      <div class="lv-settings">
+        <div class="lv-setting"><div><span>分类管理</span><span class="lv-quiet">大类、小类、排序和停用</span></div><span aria-hidden="true">›</span></div>
+        <div class="lv-setting"><div><span>导出 Excel</span><span class="lv-quiet">固定格式收支明细</span></div><span aria-hidden="true">›</span></div>
+      </div><div class="lv-settings">
+        <div class="lv-setting"><div><span>备份到本地</span><span class="lv-quiet">完整记录、分类和设置</span></div><span aria-hidden="true">›</span></div>
+        <div class="lv-setting"><div><span>恢复本地备份</span><span class="lv-quiet">先备份当前数据，再确认恢复</span></div><span aria-hidden="true">›</span></div>
+      </div><p class="lv-page-note">设置页为布局示意</p>
+    </section>
+    <section class="lv-page" data-page="entry" hidden>
+      <div class="lv-entry-heading"><button type="button" data-home>‹ 返回</button><h2 class="lv-entry-name">恋爱</h2><span class="lv-entry-kind lv-quiet">支出</span></div>
+      <label class="lv-field"><span class="lv-quiet">金额 · 元</span><input name="amount" value="128.00" inputmode="decimal" autocomplete="off" /></label>
+      <label class="lv-field"><span class="lv-quiet">日期</span><input name="date" type="date" value="2026-11-17" /></label>
+      <label class="lv-field"><span class="lv-quiet">备注（可选）</span><input name="note" value="" placeholder="添加备注" maxlength="100" autocomplete="off" /></label>
+      <button type="button" class="lv-confirm">确定</button><p class="lv-feedback" role="alert"></p>
+    </section>
+    <nav class="lv-nav" aria-label="底部导航"><button type="button" data-nav="home" aria-current="page">记账</button><button type="button" data-nav="details">明细</button><button type="button" data-nav="settings">设置</button></nav>
+    <div class="lv-overlay" hidden><section class="lv-sheet" role="dialog" aria-modal="true" aria-label="选择小类并保存"><div class="lv-handle"></div><div class="lv-sheet-top"><h3>选择小类</h3><button type="button" class="lv-dismiss">返回修改</button></div><p class="lv-chosen-amount"></p><div class="lv-choices"></div><p class="lv-page-note">点小类即保存并回首页</p></section></div>
+    <div class="lv-notice" role="status" hidden></div>
+  </template>
+  <script>
+    (() => {
+      const root=document.getElementById('ledger-visual-v4');
+      const template=document.getElementById('ledger-visual-template-v4');
+      const saved=window.openai&&window.openai.widgetState;
+      const prefs=saved&&saved.privateContent&&saved.privateContent.visualV4||{};
+      const restorers=[];
+      const groups={personal:{name:'个人',kind:'expense',base:126000,sub:['饮食','娱乐','会员']},love:{name:'恋爱',kind:'expense',base:60000,sub:['饮食','礼物','约会']},income:{name:'收入',kind:'income',base:800000,sub:['工资','奖金','其他收入']}};
+      const examples=[{group:'personal',sub:'饮食',cents:3800,date:'2026-11-17'},{group:'love',sub:'礼物',cents:12800,date:'2026-11-16'},{group:'income',sub:'工资',cents:800000,date:'2026-11-15'}];
+      const money=cents=>(cents/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      root.querySelectorAll('.lv-phone').forEach(phone=>{
+        phone.appendChild(template.content.cloneNode(true));
+        const state={current:null,pending:null,records:[],radius:phone.dataset.design==='compact'?18:24,border:phone.dataset.design==='compact'?1.5:1.3};
+        const overlay=phone.querySelector('.lv-overlay'),notice=phone.querySelector('.lv-notice');
+        const amount=phone.querySelector('[name="amount"]'),date=phone.querySelector('[name="date"]');
+        let timer;
+        function applyAppearance(value){if(value&&Number.isFinite(value.radius))state.radius=Math.max(14,Math.min(28,value.radius));if(value&&Number.isFinite(value.border))state.border=Math.max(1,Math.min(2,value.border));phone.style.setProperty('--lv-radius',state.radius+'px');phone.style.setProperty('--lv-border',state.border+'px');}
+        function persist(){prefs[phone.dataset.design]={radius:state.radius,border:state.border};if(window.openai&&typeof window.openai.setWidgetState==='function'){const result=window.openai.setWidgetState({modelContent:{illustrationOnly:true},privateContent:{visualV4:prefs}});if(result&&typeof result.catch==='function')result.catch(()=>{});}}
+        applyAppearance(prefs[phone.dataset.design]);restorers.push(()=>applyAppearance(prefs[phone.dataset.design]));
+        function show(page){phone.querySelectorAll('[data-page]').forEach(el=>el.hidden=el.dataset.page!==page);phone.querySelectorAll('[data-nav]').forEach(button=>{if(button.dataset.nav===page)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});overlay.hidden=true;state.pending=null;notice.hidden=true;clearTimeout(timer);}
+        function totals(){let income=0,expense=0;Object.entries(groups).forEach(([key,group])=>{const sum=group.base+state.records.filter(record=>record.group===key&&record.date.startsWith('2026-11')).reduce((a,r)=>a+r.cents,0);phone.querySelector('[data-value="'+key+'"]').textContent=money(sum);if(group.kind==='income')income+=sum;else expense+=sum;});phone.querySelector('[data-sum="income"]').textContent='¥ '+money(income);phone.querySelector('[data-sum="expense"]').textContent='¥ '+money(expense);}
+        function details(key){show('details');phone.querySelector('.lv-detail-title').textContent=key?groups[key].name+'明细':'明细';const mount=phone.querySelector('.lv-records');mount.replaceChildren();[...state.records].reverse().concat(examples).filter(record=>!key||record.group===key).slice(0,5).forEach(record=>{const group=groups[record.group],row=document.createElement('div'),labels=document.createElement('div'),name=document.createElement('span'),when=document.createElement('span'),value=document.createElement('span');row.className='lv-record';row.dataset.kind=group.kind;name.textContent=group.name+' / '+record.sub;when.className='lv-quiet';when.textContent=record.date;value.className='lv-record-value'+(group.kind==='income'?' lv-red':'');value.textContent=(group.kind==='income'?'+ ':'− ')+money(record.cents);labels.append(name,when);row.append(labels,value);mount.appendChild(row);});}
+        phone.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>button.dataset.nav==='details'?details(null):show(button.dataset.nav)));
+        phone.querySelectorAll('[data-home]').forEach(button=>button.addEventListener('click',()=>show('home')));
+        phone.querySelectorAll('[data-detail]').forEach(button=>button.addEventListener('click',()=>details(button.dataset.detail)));
+        phone.querySelectorAll('[data-entry]').forEach(button=>button.addEventListener('click',()=>{show('entry');state.current=button.dataset.entry;const group=groups[state.current];phone.dataset.kind=group.kind;phone.querySelector('.lv-entry-name').textContent=group.name;phone.querySelector('.lv-entry-kind').textContent=group.kind==='income'?'收入':'支出';amount.value=state.current==='personal'?'38.00':state.current==='income'?'100.00':'128.00';date.value='2026-11-17';phone.querySelector('[name="note"]').value='';phone.querySelector('.lv-feedback').textContent='';amount.focus();}));
+        phone.querySelector('.lv-confirm').addEventListener('click',()=>{const raw=amount.value.trim();if(!/^\d+(\.\d{1,2})?$/.test(raw)||!Number.isFinite(Number(raw))||Number(raw)<=0||Number(raw)>999999999.99){phone.querySelector('.lv-feedback').textContent='请输入大于零、最多两位小数的金额';amount.focus();return;}if(!date.validity.valid||!/^\d{4}-\d{2}-\d{2}$/.test(date.value)){phone.querySelector('.lv-feedback').textContent='请选择有效日期';date.focus();return;}state.pending={group:state.current,cents:Math.round(Number(raw)*100),date:date.value};const group=groups[state.current];phone.querySelector('.lv-sheet h3').textContent=group.name+' · 选择小类';const value=phone.querySelector('.lv-chosen-amount');value.textContent=(group.kind==='income'?'+ ¥ ':'− ¥ ')+money(state.pending.cents);value.classList.toggle('lv-red',group.kind==='income');const options=phone.querySelector('.lv-choices');options.replaceChildren();group.sub.forEach(sub=>{const button=document.createElement('button');button.type='button';button.className='cursor-interaction';button.textContent=sub;button.addEventListener('click',()=>{if(!state.pending||overlay.hidden)return;const record={...state.pending,sub};state.records.push(record);show('home');totals();notice.textContent='示例已保存：'+group.name+' / '+sub+' / '+money(record.cents)+' 元';notice.hidden=false;timer=setTimeout(()=>notice.hidden=true,5000);phone.querySelector('[data-entry="'+record.group+'"]').focus();});options.appendChild(button);});overlay.hidden=false;options.querySelector('button').focus();});
+        phone.querySelector('.lv-dismiss').addEventListener('click',()=>{overlay.hidden=true;state.pending=null;amount.focus();});
+        overlay.addEventListener('keydown',event=>{if(event.key==='Escape'){overlay.hidden=true;state.pending=null;amount.focus();}if(event.key==='Tab'){const buttons=Array.from(overlay.querySelectorAll('button')),first=buttons[0],last=buttons[buttons.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
+        phone.querySelectorAll('button').forEach(button=>button.classList.add('cursor-interaction'));
+        if(globalThis.Tweak){const tweak=new Tweak({container:phone,onChange:()=>{applyAppearance(state);persist();}});tweak.addSlider(state,'radius',{label:'卡片圆角',min:14,max:28,unit:'px'});tweak.addSlider(state,'border',{label:'边框粗细',min:1,max:2,step:0.1,unit:'px'});}
+      });
+      window.addEventListener('openai:set_globals',event=>{const next=event.detail&&event.detail.globals&&event.detail.globals.widgetState;if(next&&next.privateContent&&next.privateContent.visualV4){Object.assign(prefs,next.privateContent.visualV4);restorers.forEach(restore=>restore());}});
+    })();
+  </script>
+</div>

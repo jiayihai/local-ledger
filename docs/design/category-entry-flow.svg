@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="855" viewBox="0 0 1160 855" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">统一总账，点击大类后记账的流程</title>
+  <desc id="flow-desc">首页的个人和恋爱为黑色边框，收入为红色边框。点击恋爱卡片，输入128元，点击确定后底部弹出饮食、礼物、约会三个小类。点礼物即保存并返回首页。所有数据统一归入总账。</desc>
+  <style>
+    text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#191919;font-weight:400}
+    .quiet{fill:#666}.red{fill:#c72d39}.small{font-size:13px}.body{font-size:16px}.label{font-size:20px;font-weight:500}.title{font-size:27px;font-weight:500}.value{font-size:24px;font-weight:500}
+  </style>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1L8 5 1 9" fill="none" stroke="#191919" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect width="1160" height="855" fill="#f5f5f5"/>
+  <text x="30" y="42" class="title">统一总账 · 按大类快速记账</text>
+  <text x="30" y="82" class="body">点大类方块</text><text x="425" y="82" class="body">输入金额，点击确定</text><text x="820" y="82" class="body">底部选择小类，即保存</text>
+  <g transform="translate(30 108)">
+    <rect x="1" y="1" width="308" height="640" rx="29" fill="#fff" stroke="#d0d0d0"/>
+    <text x="21" y="32" class="small">9:41</text><text x="288" y="32" class="small quiet" text-anchor="end">示意</text>
+    <text x="21" y="83" class="title">记账</text><text x="21" y="114" class="small quiet">2026年11月 · 一个总账</text>
+    <text x="21" y="151" class="small quiet">本月支出</text><text x="177" y="151" class="small quiet">本月收入</text>
+    <text x="21" y="180" class="label">¥ 1,860.00</text><text x="177" y="180" class="label red">¥ 8,000.00</text>
+    <rect x="18" y="211" width="274" height="93" rx="19" fill="#fff" stroke="#191919" stroke-width="1.4"/>
+    <text x="34" y="242" class="label">个人</text><text x="34" y="281" class="value">− ¥ 1,260.00</text><text x="275" y="257" text-anchor="end" class="small quiet">明细 ›</text>
+    <rect x="18" y="319" width="274" height="93" rx="19" fill="#f6f6f6" stroke="#191919" stroke-width="1.8"/>
+    <text x="34" y="350" class="label">恋爱</text><text x="34" y="389" class="value">− ¥ 600.00</text><text x="275" y="365" text-anchor="end" class="small quiet">明细 ›</text>
+    <rect x="18" y="427" width="274" height="93" rx="19" fill="#fff" stroke="#c72d39" stroke-width="1.4"/>
+    <text x="34" y="458" class="label">收入</text><text x="34" y="497" class="value red">+ ¥ 8,000.00</text><text x="275" y="473" text-anchor="end" class="small quiet">明细 ›</text>
+    <text x="155" y="556" text-anchor="middle" class="body quiet">＋ 新建大类</text>
+    <line x1="18" y1="588" x2="292" y2="588" stroke="#e5e5e5"/>
+    <text x="55" y="619" text-anchor="middle" class="body">记账</text><text x="155" y="619" text-anchor="middle" class="body quiet">明细</text><text x="255" y="619" text-anchor="middle" class="body quiet">设置</text>
+  </g>
+  <line x1="352" y1="427" x2="413" y2="427" stroke="#191919" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(425 108)">
+    <rect x="1" y="1" width="308" height="640" rx="29" fill="#fff" stroke="#d0d0d0"/>
+    <text x="21" y="32" class="small">9:41</text><text x="288" y="32" class="small quiet" text-anchor="end">示意</text>
+    <text x="21" y="83" class="body">‹ 返回</text><text x="155" y="83" text-anchor="middle" class="label">恋爱</text>
+    <rect x="22" y="116" width="60" height="29" rx="10" fill="#fff" stroke="#191919"/>
+    <text x="52" y="136" text-anchor="middle" class="small">支出</text>
+    <text x="22" y="186" class="body quiet">金额 · 元</text><text x="22" y="242" style="font-size:42px;font-weight:500">128.00</text>
+    <line x1="22" y1="262" x2="288" y2="262" stroke="#e5e5e5"/>
+    <text x="22" y="301" class="small quiet">日期（建议项）</text><rect x="22" y="314" width="266" height="45" rx="12" fill="#fff" stroke="#e5e5e5"/><text x="35" y="342" class="body">2026-11-17</text>
+    <text x="22" y="394" class="small quiet">备注（可选，建议项）</text><rect x="22" y="407" width="266" height="45" rx="12" fill="#fff" stroke="#e5e5e5"/><text x="35" y="435" class="body quiet">添加备注</text>
+    <rect x="22" y="482" width="266" height="48" rx="24" fill="#191919"/>
+    <text x="155" y="513" text-anchor="middle" class="body" style="fill:#fff">确定</text>
+    <text x="22" y="573" class="small quiet">大类与收支类型已自动带入</text>
+  </g>
+  <line x1="747" y1="427" x2="808" y2="427" stroke="#191919" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <g transform="translate(820 108)">
+    <rect x="1" y="1" width="308" height="640" rx="29" fill="#ececec" stroke="#d0d0d0"/>
+    <text x="21" y="32" class="small quiet">9:41</text>
+    <text x="21" y="83" class="body quiet">‹ 返回</text><text x="155" y="83" text-anchor="middle" class="label quiet">恋爱</text>
+    <text x="22" y="186" class="body quiet">金额 · 元</text><text x="22" y="242" style="font-size:42px;font-weight:500;fill:#777">128.00</text>
+    <path d="M1 375 Q1 348 28 348 H282 Q309 348 309 375 V612 Q309 641 280 641 H30 Q1 641 1 612Z" fill="#fff"/>
+    <rect x="137" y="360" width="36" height="4" rx="2" fill="#d0d0d0"/>
+    <text x="22" y="401" class="label">恋爱 · 选择小类</text><text x="22" y="449" class="value">− ¥ 128.00</text>
+    <rect x="22" y="475" width="80" height="50" rx="14" fill="#fff" stroke="#191919"/>
+    <rect x="115" y="475" width="80" height="50" rx="14" fill="#191919"/>
+    <rect x="208" y="475" width="80" height="50" rx="14" fill="#fff" stroke="#191919"/>
+    <text x="62" y="506" text-anchor="middle" class="body">饮食</text><text x="155" y="506" text-anchor="middle" class="body" style="fill:#fff">礼物</text><text x="248" y="506" text-anchor="middle" class="body">约会</text>
+    <text x="22" y="566" class="small quiet">点“礼物”即保存并回首页</text><text x="22" y="590" class="small quiet">只显示“恋爱”自己的小类</text>
+  </g>
+  <text x="30" y="795" class="body">保存后：总账新增一笔「支出 / 恋爱 / 礼物 / 128.00」，恋爱本月累计更新。</text>
+  <text x="30" y="828" class="small quiet">需求草图 v0.2 · 所有金额均为示例 · 日期与备注等建议项尚待确认</text>
+</svg>
