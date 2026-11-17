@@ -56,4 +56,73 @@ class DatabaseTest {
         repo.setGroupActive("parent", true)
         assertEquals(original, repo.load())
     }
+    @Test fun groupOrderPersistsAndArchivedGroupsKeepTheirSlots() = runBlocking {
+        val original = Snapshot(listOf(
+            Group("a", "个人", Direction.EXPENSE, 0),
+            Group("hidden", "停用分类", Direction.EXPENSE, 1, false),
+            Group("b", "收入", Direction.INCOME, 2),
+            Group("c", "恋爱", Direction.EXPENSE, 3),
+        ))
+        repo.replaceAll(original)
+        repo.reorderActiveGroups(listOf("c", "a", "b"))
+        // Read through a fresh repository to check persisted order, not a UI preview.
+        val saved = LedgerRepository(db).load()
+        assertEquals(listOf("c", "hidden", "a", "b"), saved.groups.map { it.id })
+        assertEquals(listOf(0, 1, 2, 3), saved.groups.map { it.order })
+        assertFalse(saved.groups[1].active)
+        for (invalid in listOf(listOf("a", "b"), listOf("a", "a", "b"), listOf("a", "b", "hidden"))) {
+            var rejected = false
+            try { repo.reorderActiveGroups(invalid) } catch (_: IllegalArgumentException) { rejected = true }
+            assertTrue(rejected)
+            assertEquals(saved, repo.load())
+        }
+        repo.group("新大类", Direction.EXPENSE)
+        assertEquals("新大类", repo.load().groups.last().name)
+    }
+    @Test fun categoryRenameKeepsHistoryAndChecksNamesWithinItsParent() = runBlocking {
+        val entry = Entry("record", "food", 3800, "2026-11-17T12:00:00", "午餐", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        val original = Snapshot(listOf(Group("a", "个人", Direction.EXPENSE), Group("b", "恋爱", Direction.EXPENSE)),
+            listOf(Category("food", "a", "饮食"), Category("gift", "a", "礼物"), Category("other", "b", "餐饮")), listOf(entry))
+        repo.replaceAll(original)
+        repo.renameCategory("food", " 餐饮 ")
+        assertEquals(original.copy(categories = original.categories.map { if (it.id == "food") it.copy(name = "餐饮") else it }), repo.load())
+        val saved = repo.load()
+        for (invalid in listOf("礼物", " ", "x".repeat(41))) {
+            var rejected = false
+            try { repo.renameCategory("food", invalid) } catch (_: IllegalArgumentException) { rejected = true }
+            assertTrue(rejected)
+            assertEquals(saved, repo.load())
+        }
+    }
+    @Test fun categoryDeletionAndArchiveProtectHistoricalEntries() = runBlocking {
+        val entry = Entry("record", "used", 3800, "2026-11-17T12:00:00", "午餐", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        val original = Snapshot(listOf(Group("a", "个人", Direction.EXPENSE)),
+            listOf(Category("used", "a", "饮食", 0), Category("empty", "a", "误建小类", 1), Category("last", "a", "娱乐", 2)), listOf(entry))
+        repo.replaceAll(original)
+        repo.deleteEmptyCategory("empty")
+        assertEquals(original.copy(categories = original.categories.filter { it.id != "empty" }), repo.load())
+        val saved = repo.load()
+        var rejected = false
+        try { repo.deleteEmptyCategory("used") } catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(saved, repo.load())
+        repo.setCategoryActive("used", false)
+        assertEquals(saved.entries, repo.load().entries)
+        assertEquals(3800L, repo.load().summary(java.time.YearMonth.of(2026, 11)).expense)
+        repo.setCategoryActive("used", true)
+        assertEquals(saved, repo.load())
+        repo.category("a", "新小类")
+        assertEquals("新小类", repo.load().categories.last().name)
+    }
+    @Test fun archivedParentBlocksCategoryReactivationAndSaving() = runBlocking {
+        repo.replaceAll(Snapshot(listOf(Group("a", "个人", Direction.EXPENSE, active = false)), listOf(Category("child", "a", "饮食", active = false))))
+        val original = repo.load()
+        var rejected = false
+        try { repo.setCategoryActive("child", true) } catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(original, repo.load())
+        repo.setGroupActive("a", true)
+        repo.setCategoryActive("child", true)
+        assertTrue(repo.load().categories.single().active)
+    }
 }
