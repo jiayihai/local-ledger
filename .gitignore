@@ -11,3 +11,15 @@ signing.properties
 outputs/build/
 outputs/releases/
 .kotlin/
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.key
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*

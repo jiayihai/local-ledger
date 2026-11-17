@@ -1,37 +1,73 @@
-# 本地记账 App
+# 本地记账 · Local Ledger
 
-已按用户授权进入开发，后续以用户连接的安卓手机调试，不限定小米 14。当前工程最低 Android 8.0（API 26）。
+一款正在开发中的原生 Android 本地记账工具，采用简约的黑、白、红界面。支持收入和支出、自定义大类与小类，账目保存在手机本地。
 
-## 当前阶段成果
+**当前版本：0.1.3 阶段体验版，最低 Android 8.0。** 本项目仍在开发，手机上的完整验收尚未完成，建议先使用测试账目体验。
 
-- [最新 0.1.3 APK](outputs/releases/0.1.3/local-ledger-0.1.3-debug.apk)：点击明细记录修改金额、日期、备注和分类；分类管理支持大类改名。覆盖安装旧版，无需卸载。
-- [0.1.3 操作与验收说明](docs/阶段成果-0.1.3-记录编辑与大类改名.md)。
-- [0.1.2 APK](outputs/releases/0.1.2/local-ledger-0.1.2-debug.apk)：大类长按拖动排序、小类改名与删除/停用、小类按钮自动换行。
-- [0.1.2 操作与验收说明](docs/阶段成果-0.1.2-排序与小类管理.md)。
-- [0.1.1 分类管理更新 APK](outputs/releases/0.1.1/local-ledger-0.1.1-debug.apk)：覆盖安装旧版，无记录大类可删除，有记录大类可停用并重新启用。
-- [0.1.1 操作与验收说明](docs/阶段成果-0.1.1-分类管理.md)。
-- [M0 / M1 阶段报告与验收步骤](docs/阶段成果-M0-M1.md)。
-- [M1 功能体验 APK](outputs/releases/M1/local-ledger-M1-0.1.0-debug.apk)。
-- [Android 源码与构建说明](android/README.md)。
+## 下载与安装
 
-APK 已构建并核验签名，8 项核心测试通过，Android Lint 为 0 错误。真机安装、数据库运行、重启持久化、键盘与性能仍待设备验收。
+- [下载 0.1.3 APK](https://github.com/jiayihai/local-ledger/releases/download/v0.1.3/local-ledger-0.1.3-debug.apk)
+- [版本说明与文件校验](https://github.com/jiayihai/local-ledger/releases/tag/v0.1.3)
+- [全部发布版本](https://github.com/jiayihai/local-ledger/releases)
 
-当前覆盖分类创建与改名、大类拖动排序、大类/小类停用与重新启用、空分类删除、记账、明细查看与记录编辑、本月收支和结余。筛选、小类排序、记录删除撤销及文件操作界面按 M2 / M3 推进；当前先使用测试账目验收。
+将 APK 下载到安卓手机后，按系统提示允许当前下载来源安装应用，完成安装即可使用。已有本项目 0.1.x 体验版时，请直接覆盖安装；卸载会清除本地账目。
 
-## 需求与计划
+本次 APK 使用调试签名，包名为 `cn.localledger.app.debug`。它是阶段体验包，后续正式版的签名和数据迁移方案将在发布前确定。
 
-- [已确认首版需求 v1.1](docs/首版需求确认单-v1.1.md)。
-- [技术方案与开发计划](docs/技术方案与开发计划-v1.0.md)。
-- [数据设计与验收映射](docs/数据设计与验收映射-v1.0.md)。
-- [开工前审查](docs/开工前缺失点审查-v1.0.md)：未确认的新功能不自动加入基线。
-- [紧凑分区图示](docs/design/home-compact.svg)。
-- [已采用 Excel 样表](outputs/requirements-20261117/记账导出样表-v0.1.xlsx)，均为示例数据。
+## 当前功能
 
-## 目录
+- 收入与支出统一保存在本地账本，金额使用人民币并精确到分。
+- 自定义大类和各自独立的小类；支出使用黑色边框，收入使用红色边框。
+- 首页选择大类，填写金额、日期和可选备注，再点小类保存。
+- 首页显示本月收支、大类累计和较小的本月结余。
+- 长按首页大类卡片，上下拖动调整顺序。
+- 在明细中点击记录，修改金额、日期、备注及大类、小类。
+- 大类、小类支持改名、停用及重新启用；没有历史记录的分类可确认删除。
+- 小类选项按可用宽度自动换行，选项较多时可滚动。
 
-- `android/`：实际安卓工程、核心规则与设备测试。
-- `tools/build-android.ps1`：当前电脑的便携式工具链构建入口。
-- `docs/`：需求、设计、计划和阶段证据；网页原型不是安卓运行截图。
-- `outputs/releases/`：阶段安装包。
-- `.tools/`：本机工具和缓存，未纳入源码版本管理。
-- `work/`、`output/`：需求原型制作与检查材料。
+现有版本不要求注册账户，未配置联网权限，也没有接入广告或统计 SDK。
+
+## 开发状态
+
+| 项目 | 状态 |
+| --- | --- |
+| 安卓 APK 构建、签名校验 | 已通过 |
+| 核心规则 JVM 测试 | 8 项通过 |
+| Android Lint | 0 错误，12 项警告 |
+| 数据库设备测试 | 12 项已编译，尚未连接设备执行 |
+| 真机升级、数据库运行、键盘、拖动和重启持久化验收 | 待验证 |
+| Excel 导出、手动备份与恢复 | 核心文件模块已有测试，手机操作界面待交付 |
+| 筛选、小类排序、记录删除与撤销 | 待交付 |
+| 微信 / 支付宝支出辅助记账 | 可行性讨论阶段 |
+
+## 源码与构建
+
+采用 Kotlin、Jetpack Compose、ViewModel / StateFlow 和 Room，另有一个纯 Kotlin 核心模块。
+
+准备 JDK 17、Android SDK 35，用 Android Studio 打开 `android/`，或在该目录运行：
+
+```powershell
+.\gradlew.bat :core:test :app:assembleDebug :app:lintDebug
+```
+
+macOS / Linux 使用 `./gradlew` 执行同样任务。APK 输出至 `android/app/build/outputs/apk/debug/app-debug.apk`。
+
+[Android 工程说明](android/README.md)包含依赖版本、验证入口与当前电脑的便携式工具链使用方法。`.tools/` 是本机开发工具与缓存，不随仓库发布。
+
+## 需求与阶段资料
+
+- [已确认首版需求 v1.1](docs/首版需求确认单-v1.1.md)
+- [技术方案与开发计划](docs/技术方案与开发计划-v1.0.md)
+- [0.1.3 记录编辑与大类改名](docs/阶段成果-0.1.3-记录编辑与大类改名.md)
+- [0.1.2 排序与小类管理](docs/阶段成果-0.1.2-排序与小类管理.md)
+- [0.1.1 大类管理](docs/阶段成果-0.1.1-分类管理.md)
+- [M0 / M1 阶段报告](docs/阶段成果-M0-M1.md)
+- [支付辅助记账可行性分析](docs/可行性分析-支付辅助记账-v0.1.md)
+- [首页紧凑分区设计示意](docs/design/home-compact.svg)
+- [Excel 固定导出样表](outputs/requirements-20261117/记账导出样表-v0.1.xlsx)，其中均为示例数据
+
+历史报告中的 `outputs/releases/` 是本机构建目录；对外下载请使用上方 GitHub Releases。设计图与网页原型用于需求讨论，实际安卓界面以 APK 为准。
+
+## 问题反馈
+
+可以通过 [Issues](https://github.com/jiayihai/local-ledger/issues)反馈，建议提供手机型号、Android 版本、App 版本和复现步骤。公开反馈时请使用测试账目，避免包含个人交易或账户信息。
