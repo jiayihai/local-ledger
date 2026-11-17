@@ -20,11 +20,26 @@ data class EntryRow(@PrimaryKey val id: String, val categoryId: String, val cent
     @Query("DELETE FROM ledger_entries") suspend fun clearEntries()
     @Query("DELETE FROM ledger_categories") suspend fun clearCategories()
     @Query("DELETE FROM ledger_groups") suspend fun clearGroups()
+    @Query("SELECT COUNT(*) FROM ledger_entries INNER JOIN ledger_categories ON ledger_entries.categoryId = ledger_categories.id WHERE ledger_categories.groupId = :groupId") suspend fun groupEntryCount(groupId: String): Int
+    @Query("UPDATE ledger_groups SET active = :active WHERE id = :groupId") suspend fun setGroupActive(groupId: String, active: Boolean)
+    @Query("DELETE FROM ledger_categories WHERE groupId = :groupId") suspend fun deleteGroupCategories(groupId: String)
+    @Query("DELETE FROM ledger_groups WHERE id = :groupId") suspend fun deleteGroup(groupId: String)
 }
 @Database(entities = [GroupRow::class, CategoryRow::class, EntryRow::class], version = 1, exportSchema = true)
 abstract class LedgerDatabase : RoomDatabase() { abstract fun ledger(): LedgerDao }
 
 class LedgerRepository(private val database: LedgerDatabase) {
+    suspend fun setGroupActive(groupId: String, active: Boolean) = database.withTransaction {
+        require(database.ledger().groups().any { it.id == groupId }) { "大类不存在" }
+        database.ledger().setGroupActive(groupId, active)
+    }
+    suspend fun deleteEmptyGroup(groupId: String) = database.withTransaction {
+        val dao = database.ledger()
+        require(dao.groups().any { it.id == groupId }) { "大类不存在" }
+        require(dao.groupEntryCount(groupId) == 0) { "这个大类有历史记录，请使用停用以保留账目" }
+        dao.deleteGroupCategories(groupId)
+        dao.deleteGroup(groupId)
+    }
     // Data-layer primitive; the M3 restore service must protect current data and obtain confirmation first.
     suspend fun replaceAll(snapshot: Snapshot) {
         snapshot.validate()

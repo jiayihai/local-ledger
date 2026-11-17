@@ -56,6 +56,8 @@ class LedgerViewModel(private val repo: LedgerRepository) : ViewModel() {
     fun group(name: String, direction: Direction, done: () -> Unit) = perform({ repo.group(name, direction) }, done)
     fun category(group: String, name: String, done: () -> Unit) = perform({ repo.category(group, name) }, done)
     fun save(entry: Entry, done: () -> Unit) = perform({ repo.save(entry) }, done)
+    fun setGroupActive(id: String, active: Boolean, done: () -> Unit) = perform({ repo.setGroupActive(id, active) }, done)
+    fun deleteEmptyGroup(id: String, done: () -> Unit) = perform({ repo.deleteEmptyGroup(id) }, done)
 }
 
 class MainActivity : ComponentActivity() {
@@ -90,6 +92,7 @@ class MainActivity : ComponentActivity() {
     var sheet by remember { mutableStateOf(false) }
     var newGroup by remember { mutableStateOf(false) }
     var newCategory by remember { mutableStateOf<String?>(null) }
+    var groupAction by remember { mutableStateOf<Pair<String, String>?>(null) }
     val selected = data.groups.find { it.id == groupId }
     var month by remember { mutableStateOf(YearMonth.now()) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -170,17 +173,46 @@ class MainActivity : ComponentActivity() {
                     }
                     "设置" -> {
                         TextButton(onClick = { page = "分类管理" }) { Text("分类管理 ›") }
-                        Spacer(Modifier.height(18.dp)); Text("M1 功能体验版", fontSize = 18.sp)
-                        Text("当前提供分类创建、记账和明细查看。编辑、筛选、导出与备份恢复将随后续阶段交付。", color = Color.Gray)
+                        Spacer(Modifier.height(18.dp)); Text("分类管理更新版 0.1.1", fontSize = 18.sp)
+                        Text("可删除没有记录的大类，或停用大类并保留历史。记录编辑、筛选、导出与备份恢复将随后续阶段交付。", color = Color.Gray)
                     }
                     "分类管理" -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { TextButton(onClick = { newGroup = true }) { Text("＋ 新建大类") } }
                         items(data.groups, key = { it.id }) { group ->
-                            Column { Text(group.name, fontSize = 20.sp); Text(data.categories.filter { it.groupId == group.id }.joinToString("、") { it.name }.ifBlank { "暂无小类" }, color = Color.Gray); TextButton(onClick = { newCategory = group.id }) { Text("＋ 添加小类") } }
+                            val children = data.categories.filter { it.groupId == group.id }
+                            val historyCount = data.entries.count { entry -> children.any { it.id == entry.categoryId } }
+                            OutlinedCard(border = BorderStroke(1.dp, if (group.direction == Direction.INCOME) Red else Ink), colors = CardDefaults.outlinedCardColors(containerColor = Color.White)) {
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Text(group.name + if (group.active) "" else "（已停用）", fontSize = 20.sp)
+                                    Text(children.joinToString("、") { it.name }.ifBlank { "暂无小类" }, color = Color.Gray)
+                                    Text("${children.size} 个小类 · $historyCount 笔历史记录", fontSize = 12.sp, color = Color.Gray)
+                                    Row {
+                                        if (group.active) TextButton(enabled = !vm.busy, onClick = { newCategory = group.id }) { Text("添加小类") }
+                                        TextButton(enabled = !vm.busy, onClick = { groupAction = group.id to if (group.active) "deactivate" else "activate" }) { Text(if (group.active) "停用" else "重新启用") }
+                                        if (historyCount == 0) TextButton(enabled = !vm.busy, onClick = { groupAction = group.id to "delete" }) { Text("删除", color = Red) }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+    groupAction?.let { (id, action) ->
+        data.groups.find { it.id == id }?.let { group ->
+            val title = when (action) { "delete" -> "删除空大类"; "activate" -> "重新启用大类"; else -> "停用大类" }
+            val message = when (action) {
+                "delete" -> "将删除“${group.name}”及其小类。该大类没有记账记录，删除后无法撤销。"
+                "activate" -> "“${group.name}”将重新出现在记账首页，各小类保留原有的启用状态。"
+                else -> "“${group.name}”将从记账首页隐藏。历史记录和累计仍保留，可在分类管理中重新启用。"
+            }
+            AlertDialog(onDismissRequest = { if (!vm.busy) groupAction = null }, title = { Text(title) }, text = { Text(message) },
+                confirmButton = { TextButton(enabled = !vm.busy, onClick = {
+                    val done = { groupAction = null }
+                    if (action == "delete") vm.deleteEmptyGroup(id, done) else vm.setGroupActive(id, action == "activate", done)
+                }) { Text(if (vm.busy) "处理中…" else "确认") } },
+                dismissButton = { TextButton(enabled = !vm.busy, onClick = { groupAction = null }) { Text("取消") } })
         }
     }
     if (newGroup) NameDialog("新建大类", true, vm.busy, { newGroup = false }) { name, direction -> vm.group(name, direction) { newGroup = false } }

@@ -35,4 +35,25 @@ class DatabaseTest {
         repo.replaceAll(replacement)
         assertEquals(replacement, repo.load())
     }
+    @Test fun emptyGroupDeletionRemovesItsCategories() = runBlocking {
+        repo.group("误建分类", Direction.EXPENSE)
+        val group = repo.load().groups.single()
+        repo.category(group.id, "未使用小类")
+        repo.deleteEmptyGroup(group.id)
+        assertEquals(Snapshot(), repo.load())
+    }
+    @Test fun historicalGroupCannotBeDeletedAndArchivePreservesEverything() = runBlocking {
+        val entry = Entry("record", "child", 3800, "2026-11-17T12:00:00", "午餐", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        val original = Snapshot(listOf(Group("parent", "个人", Direction.EXPENSE)), listOf(Category("child", "parent", "饮食")), listOf(entry))
+        repo.replaceAll(original)
+        var rejected = false
+        try { repo.deleteEmptyGroup("parent") } catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(original, repo.load())
+        repo.setGroupActive("parent", false)
+        assertEquals(original.copy(groups = original.groups.map { it.copy(active = false) }), repo.load())
+        assertEquals(3800L, repo.load().summary(java.time.YearMonth.of(2026, 11)).expense)
+        repo.setGroupActive("parent", true)
+        assertEquals(original, repo.load())
+    }
 }
