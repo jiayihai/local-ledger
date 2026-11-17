@@ -1,10 +1,19 @@
 param([string[]]$Tasks = @('wrapper', ':core:test', ':app:assembleDebug'))
 $ErrorActionPreference = 'Stop'
 $ledgerRoot = Split-Path $PSScriptRoot -Parent
-$ledgerTools = Join-Path $env:TEMP 'local-ledger-devtools'
-$ledgerProject = Join-Path $env:TEMP 'local-ledger-android'
-if (-not (Test-Path -LiteralPath $ledgerTools)) { New-Item -ItemType Junction -Path $ledgerTools -Target (Join-Path $ledgerRoot '.tools') | Out-Null }
-if (-not (Test-Path -LiteralPath $ledgerProject)) { New-Item -ItemType Junction -Path $ledgerProject -Target (Join-Path $ledgerRoot 'android') | Out-Null }
+function Get-LedgerJunction([string]$Name, [string]$Target) {
+    $ledgerLink = Join-Path $env:TEMP $Name
+    if (Test-Path -LiteralPath $ledgerLink) {
+        $ledgerExisting = Get-Item -LiteralPath $ledgerLink -Force
+        if ($ledgerExisting.LinkType -eq 'Junction' -and $ledgerExisting.Target[0] -eq $Target) { return $ledgerLink }
+        # Preserve an unexpected existing directory; use a fresh alias instead.
+        $ledgerLink = Join-Path $env:TEMP ($Name + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    }
+    New-Item -ItemType Junction -Path $ledgerLink -Target $Target | Out-Null
+    return $ledgerLink
+}
+$ledgerTools = Get-LedgerJunction 'local-ledger-devtools' (Join-Path $ledgerRoot '.tools')
+$ledgerProject = Get-LedgerJunction 'local-ledger-android' (Join-Path $ledgerRoot 'android')
 $env:JAVA_HOME = (Get-ChildItem -LiteralPath "$ledgerTools/jdk" -Directory | Select-Object -First 1).FullName
 $env:ANDROID_HOME = "$ledgerTools/android-sdk"
 $env:ANDROID_USER_HOME = "$ledgerTools/android-user"

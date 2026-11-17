@@ -36,8 +36,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.*
 import java.util.UUID
 
-private val Ink = Color(0xFF191919)
-private val Red = Color(0xFFC72D39)
+internal val Ink = Color(0xFF191919)
+internal val Red = Color(0xFFC72D39)
 
 class LedgerViewModel(private val repo: LedgerRepository) : ViewModel() {
     val snapshot = MutableStateFlow(Snapshot())
@@ -64,6 +64,8 @@ class LedgerViewModel(private val repo: LedgerRepository) : ViewModel() {
     fun renameCategory(id: String, name: String, done: () -> Unit) = perform({ repo.renameCategory(id, name) }, done)
     fun setCategoryActive(id: String, active: Boolean, done: () -> Unit) = perform({ repo.setCategoryActive(id, active) }, done)
     fun deleteEmptyCategory(id: String, done: () -> Unit) = perform({ repo.deleteEmptyCategory(id) }, done)
+    fun renameGroup(id: String, name: String, done: () -> Unit) = perform({ repo.renameGroup(id, name) }, done)
+    fun updateEntry(original: Entry, categoryId: String, cents: Long, date: LocalDate, note: String, done: () -> Unit) = perform({ repo.updateEntry(original, categoryId, cents, date, note) }, done)
 }
 
 class MainActivity : ComponentActivity() {
@@ -102,6 +104,8 @@ class MainActivity : ComponentActivity() {
     var manageCategoriesFor by remember { mutableStateOf<String?>(null) }
     var editingCategory by remember { mutableStateOf<String?>(null) }
     var categoryAction by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var editingGroup by remember { mutableStateOf<String?>(null) }
+    var editingEntry by remember { mutableStateOf<Entry?>(null) }
     val selected = data.groups.find { it.id == groupId }
     var month by remember { mutableStateOf(YearMonth.now()) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -118,13 +122,21 @@ class MainActivity : ComponentActivity() {
         if (sheet) sheet = false else { groupId = null; detailsId = null; page = "记账" }
     }
     Scaffold(snackbarHost = { SnackbarHost(snack) }, bottomBar = {
-        if (selected == null) NavigationBar(containerColor = Color.White) {
+        if (selected == null && editingEntry == null) NavigationBar(containerColor = Color.White) {
             listOf("记账", "明细", "设置").forEach { label -> NavigationBarItem(selected = page == label, onClick = { page = label; detailsId = null }, icon = { Text(label) }, colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFF2F2F2))) }
         }
     }) { insets ->
         Column(Modifier.fillMaxSize().padding(insets).imePadding().padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(18.dp))
-            if (selected != null) {
+            val original = editingEntry
+            if (original != null) {
+                EntryEditor(original, data, vm.busy, onClose = { editingEntry = null }) { categoryId, cents, newDate, newNote ->
+                    vm.updateEntry(original, categoryId, cents, newDate, newNote) {
+                        editingEntry = null
+                        scope.launch { snack.showSnackbar("已保存修改") }
+                    }
+                }
+            } else if (selected != null) {
                 val entryColor = if (selected.direction == Direction.INCOME) Red else Ink
                 val fieldColors = OutlinedTextFieldDefaults.colors(focusedBorderColor = entryColor, unfocusedBorderColor = entryColor)
                 val amountFocus = remember(selected.id) { FocusRequester() }
@@ -178,15 +190,15 @@ class MainActivity : ComponentActivity() {
                         if (rows.isEmpty()) item { Text("还没有记录", color = Color.Gray) }
                         items(rows, key = { it.id }) { entry ->
                             val category = data.categories.first { it.id == entry.categoryId }; val group = data.groups.first { it.id == category.groupId }
-                            OutlinedCard(border = BorderStroke(1.dp, if (group.direction == Direction.INCOME) Red else Ink), colors = CardDefaults.outlinedCardColors(containerColor = Color.White)) {
-                                Column(Modifier.fillMaxWidth().padding(14.dp)) { Text("${group.name} / ${category.name}"); Text("${entry.occurredAt.replace('T', ' ')}  ${if (group.direction == Direction.INCOME) "+" else "−"} ¥ ${Money.format(entry.cents)}", color = if (group.direction == Direction.INCOME) Red else Ink); if (entry.note.isNotBlank()) Text(entry.note, color = Color.Gray) }
+                            OutlinedCard(onClick = { editingEntry = entry }, enabled = !vm.busy, border = BorderStroke(1.dp, if (group.direction == Direction.INCOME) Red else Ink), colors = CardDefaults.outlinedCardColors(containerColor = Color.White)) {
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) { Text("${group.name} / ${category.name}"); Text("${entry.occurredAt.replace('T', ' ')}  ${if (group.direction == Direction.INCOME) "+" else "−"} ¥ ${Money.format(entry.cents)}", color = if (group.direction == Direction.INCOME) Red else Ink); if (entry.note.isNotBlank()) Text(entry.note, color = Color.Gray); Text("点击修改 ›", fontSize = 12.sp, color = Color.Gray) }
                             }
                         }
                     }
                     "设置" -> {
                         TextButton(onClick = { page = "分类管理" }) { Text("分类管理 ›") }
-                        Spacer(Modifier.height(18.dp)); Text("分类管理更新版 0.1.2", fontSize = 18.sp)
-                        Text("首页长按大类可拖动排序；分类管理支持小类改名、删除和停用。记录编辑、筛选、导出与备份恢复将随后续阶段交付。", color = Color.Gray)
+                        Spacer(Modifier.height(18.dp)); Text("本地记账 0.1.3", fontSize = 18.sp)
+                        Text("明细中点击记录可修改；分类管理支持大类和小类改名、删除空分类及停用。筛选、导出与备份恢复将随后续阶段交付。", color = Color.Gray)
                     }
                     "分类管理" -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { TextButton(onClick = { newGroup = true }) { Text("＋ 新建大类") } }
@@ -200,6 +212,7 @@ class MainActivity : ComponentActivity() {
                                     Text("${children.size} 个小类 · $historyCount 笔历史记录", fontSize = 12.sp, color = Color.Gray)
                                     TextButton(enabled = !vm.busy, onClick = { manageCategoriesFor = group.id }) { Text("管理小类 ›") }
                                     FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        TextButton(enabled = !vm.busy, onClick = { editingGroup = group.id }) { Text("改名") }
                                         if (group.active) TextButton(enabled = !vm.busy, onClick = { newCategory = group.id }) { Text("添加小类") }
                                         TextButton(enabled = !vm.busy, onClick = { groupAction = group.id to if (group.active) "deactivate" else "activate" }) { Text(if (group.active) "停用" else "重新启用") }
                                         if (historyCount == 0) TextButton(enabled = !vm.busy, onClick = { groupAction = group.id to "delete" }) { Text("删除", color = Red) }
@@ -236,6 +249,16 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     if (group.active) TextButton(enabled = !vm.busy, onClick = { newCategory = id }) { Text("＋ 新建小类") }
+                }
+            }
+        }
+    }
+    editingGroup?.let { id ->
+        data.groups.find { it.id == id }?.let { group ->
+            key(id) {
+                NameDialog("修改大类名称", false, vm.busy, { editingGroup = null }, initialName = group.name,
+                    confirmLabel = "保存", description = "历史明细中的大类名称也会更新，账目、小类和排列顺序保持不变。") { name, _ ->
+                    vm.renameGroup(id, name) { editingGroup = null }
                 }
             }
         }

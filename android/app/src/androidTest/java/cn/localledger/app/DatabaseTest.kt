@@ -125,4 +125,72 @@ class DatabaseTest {
         repo.setCategoryActive("child", true)
         assertTrue(repo.load().categories.single().active)
     }
+    @Test fun groupRenamePreservesIdentityOrderChildrenAndHistory() = runBlocking {
+        val entry = Entry("record", "food", 3800, "2026-11-17T12:00:00", "午餐", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        val original = Snapshot(listOf(Group("a", "个人", Direction.EXPENSE, 4, false), Group("b", "恋爱", Direction.EXPENSE, 5)),
+            listOf(Category("food", "a", "饮食")), listOf(entry))
+        repo.replaceAll(original)
+        repo.renameGroup("a", " 生活开支 ")
+        val renamed = original.copy(groups = original.groups.map { if (it.id == "a") it.copy(name = "生活开支") else it })
+        assertEquals(renamed, repo.load())
+        repo.renameGroup("a", "生活开支")
+        for (invalid in listOf("恋爱", " ", "x".repeat(41))) {
+            var rejected = false
+            try { repo.renameGroup("a", invalid) } catch (_: IllegalArgumentException) { rejected = true }
+            assertTrue(rejected)
+            assertEquals(renamed, repo.load())
+        }
+    }
+    @Test fun editingMovesOneExistingRecordAndRecalculatesTotals() = runBlocking {
+        val entry = Entry("record", "food", 3800, "2026-11-17T12:34:56", "午餐", "2026-11-17T04:34:56Z", "2026-11-17T04:34:56Z")
+        repo.replaceAll(Snapshot(listOf(Group("a", "个人", Direction.EXPENSE), Group("b", "收入", Direction.INCOME)),
+            listOf(Category("food", "a", "饮食"), Category("salary", "b", "工资")), listOf(entry)))
+        repo.updateEntry(entry, "salary", 12801, java.time.LocalDate.of(2026, 10, 31), "纠正")
+        val saved = LedgerRepository(db).load()
+        val revised = saved.entries.single()
+        assertEquals(entry.copy(categoryId = "salary", cents = 12801, occurredAt = "2026-10-31T12:34:56", note = "纠正", updatedAt = revised.updatedAt), revised)
+        java.time.Instant.parse(revised.updatedAt)
+        assertEquals(Summary(0, 0), saved.summary(java.time.YearMonth.of(2026, 11)))
+        assertEquals(Summary(0, 12801), saved.summary(java.time.YearMonth.of(2026, 10)))
+        var rejected = false
+        try { repo.updateEntry(entry, "food", 1, java.time.LocalDate.of(2026, 11, 17), "过期编辑") } catch (_: IllegalArgumentException) { rejected = true }
+        assertTrue(rejected)
+        assertEquals(saved, repo.load())
+    }
+    @Test fun archivedOriginalClassificationCanBeKeptButCannotBeNewlyAssigned() = runBlocking {
+        val entry = Entry("record", "old", 3800, "2026-11-17T12:00:00", "午餐", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        repo.replaceAll(Snapshot(listOf(Group("a", "停用大类", Direction.EXPENSE, active = false), Group("b", "个人", Direction.EXPENSE)),
+            listOf(Category("old", "a", "旧小类", active = false), Category("other", "a", "另一个旧小类"), Category("active", "b", "饮食"), Category("disabled", "b", "停用小类", active = false)), listOf(entry)))
+        repo.updateEntry(entry, "old", 4000, java.time.LocalDate.of(2026, 11, 17), "修改备注")
+        val saved = repo.load()
+        for (invalid in listOf("other", "disabled", "missing")) {
+            var rejected = false
+            try { repo.updateEntry(saved.entries.single(), invalid, 1, java.time.LocalDate.of(2026, 11, 17), "") } catch (_: IllegalArgumentException) { rejected = true } catch (_: IllegalStateException) { rejected = true }
+            assertTrue(rejected)
+            assertEquals(saved, repo.load())
+        }
+        repo.updateEntry(saved.entries.single(), "active", 4000, java.time.LocalDate.of(2026, 11, 17), "迁移分类")
+        assertEquals("active", repo.load().entries.single().categoryId)
+    }
+    @Test fun invalidEditsDoNotInsertOrChangeRecords() = runBlocking {
+        val entry = Entry("record", "food", 3800, "2026-11-17T12:00:00", "午餐", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        val original = Snapshot(listOf(Group("a", "个人", Direction.EXPENSE)), listOf(Category("food", "a", "饮食")), listOf(entry))
+        repo.replaceAll(original)
+        for ((cents, note) in listOf(0L to "", (Money.MAX_CENTS + 1) to "", 1L to "x".repeat(2001))) {
+            var rejected = false
+            try { repo.updateEntry(entry, "food", cents, java.time.LocalDate.of(2026, 11, 17), note) } catch (_: IllegalArgumentException) { rejected = true }
+            assertTrue(rejected)
+            assertEquals(original, repo.load())
+        }
+        var missingRejected = false
+        try { repo.updateEntry(entry.copy(id = "missing"), "food", 1, java.time.LocalDate.of(2026, 11, 17), "") } catch (_: IllegalStateException) { missingRejected = true }
+        assertTrue(missingRejected)
+        assertEquals(original, repo.load())
+        val deleted = original.copy(entries = listOf(entry.copy(deletedAt = 1)))
+        repo.replaceAll(deleted)
+        var deletedRejected = false
+        try { repo.updateEntry(deleted.entries.single(), "food", 1, java.time.LocalDate.of(2026, 11, 17), "") } catch (_: IllegalArgumentException) { deletedRejected = true }
+        assertTrue(deletedRejected)
+        assertEquals(deleted, repo.load())
+    }
 }

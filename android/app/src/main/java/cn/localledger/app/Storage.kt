@@ -14,6 +14,7 @@ data class EntryRow(@PrimaryKey val id: String, val categoryId: String, val cent
     @Query("SELECT * FROM ledger_groups ORDER BY sortOrder, id") suspend fun groups(): List<GroupRow>
     @Query("SELECT * FROM ledger_categories ORDER BY sortOrder, id") suspend fun categories(): List<CategoryRow>
     @Query("SELECT * FROM ledger_entries ORDER BY occurredAt DESC, id") suspend fun entries(): List<EntryRow>
+    @Query("SELECT * FROM ledger_entries WHERE id = :entryId") suspend fun entry(entryId: String): EntryRow?
     @Insert suspend fun addGroup(row: GroupRow)
     @Insert suspend fun addCategory(row: CategoryRow)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun addEntry(row: EntryRow): Long
@@ -29,11 +30,35 @@ data class EntryRow(@PrimaryKey val id: String, val categoryId: String, val cent
     @Query("UPDATE ledger_categories SET active = :active WHERE id = :categoryId") suspend fun setCategoryActive(categoryId: String, active: Boolean)
     @Query("SELECT COUNT(*) FROM ledger_entries WHERE categoryId = :categoryId") suspend fun categoryEntryCount(categoryId: String): Int
     @Query("DELETE FROM ledger_categories WHERE id = :categoryId") suspend fun deleteCategory(categoryId: String)
+    @Query("UPDATE ledger_groups SET name = :name WHERE id = :groupId") suspend fun renameGroup(groupId: String, name: String)
+    @Query("UPDATE ledger_entries SET categoryId = :categoryId, cents = :cents, occurredAt = :occurredAt, note = :note, updatedAt = :updatedAt WHERE id = :entryId AND deletedAt IS NULL")
+    suspend fun updateEntry(entryId: String, categoryId: String, cents: Long, occurredAt: String, note: String, updatedAt: String): Int
 }
 @Database(entities = [GroupRow::class, CategoryRow::class, EntryRow::class], version = 1, exportSchema = true)
 abstract class LedgerDatabase : RoomDatabase() { abstract fun ledger(): LedgerDao }
 
 class LedgerRepository(private val database: LedgerDatabase) {
+    suspend fun renameGroup(groupId: String, name: String) = database.withTransaction {
+        val dao = database.ledger()
+        val clean = name.trim()
+        require(clean.isNotEmpty() && clean.length <= 40) { "名称请填写 1 至 40 个字符" }
+        val groups = dao.groups()
+        require(groups.any { it.id == groupId }) { "大类不存在" }
+        require(groups.none { it.id != groupId && it.name == clean }) { "已有同名大类" }
+        dao.renameGroup(groupId, clean)
+    }
+    suspend fun updateEntry(original: Entry, categoryId: String, cents: Long, date: java.time.LocalDate, note: String) = database.withTransaction {
+        val dao = database.ledger()
+        val current = dao.entry(original.id)?.toEntry() ?: error("记录不存在，请返回明细刷新")
+        require(current.deletedAt == null) { "记录已删除，无法修改" }
+        require(current == original) { "记录已变化，请返回明细重新打开后修改" }
+        val category = dao.categories().firstOrNull { it.id == categoryId } ?: error("小类不存在")
+        val group = dao.groups().firstOrNull { it.id == category.groupId } ?: error("大类不存在")
+        // An archived original classification can be kept while correcting its amount or note.
+        if (categoryId != current.categoryId) require(category.active && group.active) { "请选择启用的大类和小类" }
+        val revised = current.edited(categoryId, cents, date, note, java.time.Instant.now().toString())
+        check(dao.updateEntry(revised.id, revised.categoryId, revised.cents, revised.occurredAt, revised.note, revised.updatedAt) == 1) { "保存失败，请重新打开记录" }
+    }
     // Reorder visible groups within their existing slots; archived groups retain their position.
     suspend fun reorderActiveGroups(ids: List<String>) = database.withTransaction {
         val dao = database.ledger()
@@ -90,7 +115,7 @@ class LedgerRepository(private val database: LedgerDatabase) {
         val dao = database.ledger()
         Snapshot(dao.groups().map { Group(it.id, it.name, Direction.valueOf(it.direction), it.sortOrder, it.active) },
             dao.categories().map { Category(it.id, it.groupId, it.name, it.sortOrder, it.active) },
-            dao.entries().map { Entry(it.id, it.categoryId, it.cents, it.occurredAt, it.note, it.createdAt, it.updatedAt, it.deletedAt) })
+            dao.entries().map { it.toEntry() })
     }
     suspend fun group(name: String, direction: Direction) = database.withTransaction {
         val clean = name.trim(); require(clean.isNotEmpty() && clean.length <= 40) { "名称请填写 1 至 40 个字符" }
@@ -111,3 +136,5 @@ class LedgerRepository(private val database: LedgerDatabase) {
         database.ledger().addEntry(EntryRow(entry.id, entry.categoryId, entry.cents, entry.occurredAt, entry.note, entry.createdAt, entry.updatedAt, entry.deletedAt))
     }
 }
+
+private fun EntryRow.toEntry() = Entry(id, categoryId, cents, occurredAt, note, createdAt, updatedAt, deletedAt)
