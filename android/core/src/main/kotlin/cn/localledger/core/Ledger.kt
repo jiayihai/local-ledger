@@ -14,10 +14,11 @@ data class Summary(val expense: Long, val income: Long) { val balance get() = Ma
 
 object Money {
     const val MAX_CENTS = 99_999_999_999L
-    fun parse(text: String): Long {
+    fun parse(text: String, allowZero: Boolean = false): Long {
         require(Regex("[0-9]+(\\.[0-9]{1,2})?").matches(text.trim())) { "请输入有效金额，最多两位小数" }
         val result = BigDecimal(text.trim()).movePointRight(2).longValueExact()
-        require(result in 1..MAX_CENTS) { "金额应在 0.01 至 999,999,999.99 元之间" }
+        val minimum = if (allowZero) 0L else 1L
+        require(result in minimum..MAX_CENTS) { "金额应在 ${format(minimum)} 至 999,999,999.99 元之间" }
         return result
     }
     fun format(cents: Long): String = BigDecimal.valueOf(cents, 2).toPlainString()

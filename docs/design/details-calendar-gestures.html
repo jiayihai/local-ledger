@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+<link rel="icon" href="data:,">
+<title>本地记账 · 日历交互原型</title>
+<style>
+  :root{color-scheme:light;--ink:#191919;--muted:#646464;--line:#e6e6e6;--wash:#f2f2f2;--red:#c72d39;--step:36px;font:15px/1.5 system-ui,"Microsoft YaHei",sans-serif;color:var(--ink);background:#f3f3f3}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0}
+  button,input{font:inherit;color:inherit}
+  button{border:0;background:transparent;cursor:pointer;padding:0}
+  button:disabled{opacity:.35;cursor:default}
+  :focus-visible{outline:2px solid #444;outline-offset:2px}
+  .stage{width:min(100% - 32px,790px);margin:24px auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,390px);align-items:start;gap:44px}
+  .intro{padding:34px 0 0}
+  .eyebrow,.hint,.muted{color:var(--muted);font-size:12px}
+  .intro h1{font-size:27px;line-height:1.25;margin:10px 0 12px}
+  .intro p{margin:8px 0;font-size:14px}
+  .intro ol{padding-left:22px;font-size:14px;margin:16px 0}
+  .intro li+li{margin-top:10px}
+  .phone{height:min(770px,calc(100dvh - 48px));min-height:450px;position:relative;background:#fff;border:1px solid #d6d6d6;border-radius:27px;overflow:hidden;box-shadow:0 12px 32px #0001;isolation:isolate}
+  .phone:has(.inline-date:focus){min-height:0}
+  .app{height:100%;display:flex;flex-direction:column}
+  .status{display:flex;justify-content:space-between;padding:11px 18px 4px;font-size:12px;color:var(--muted)}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:8px 16px 9px;gap:8px}
+  .top h2{margin:0;font-size:26px;letter-spacing:1px}
+  .pill{border-radius:20px;background:var(--wash);padding:5px 11px;font-size:12px}
+  .body{overflow:auto;overscroll-behavior:contain;padding:0 12px 16px;flex:1}
+  .card{border:1px solid var(--line);border-radius:17px;background:#fff}
+  .calendar{overflow:hidden}
+  .month-bar{display:flex;align-items:center;gap:3px;padding:3px 8px}
+  .date-title{font-size:16px;font-weight:650;display:flex;align-items:center;gap:7px;min-height:44px;text-align:left;flex:1;padding:0 5px;border-radius:10px}
+  .date-title:hover,.month-button:hover,.today:hover{background:var(--wash)}
+  .chevron{display:inline-block;width:7px;height:7px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);flex:none;margin-top:-3px}
+  .month-button,.today{min-height:44px;min-width:34px;border-radius:9px}
+  .month-button{font-size:22px;line-height:1}
+  .today{font-size:12px;padding:0 6px}
+  .weekdays,.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+  .weekdays{color:var(--muted);font-size:11px;text-align:center;padding:4px 5px 3px;border-top:1px solid var(--line)}
+  .month-window{overflow:hidden;touch-action:pan-y;user-select:none;cursor:grab}
+  .month-window.dragging{cursor:grabbing}
+  .month-track{display:flex;align-items:flex-start;transform:translate3d(-100%,0,0)}
+  .month-page{width:100%;flex:none;padding:0 5px 3px}
+  .week{min-height:44px;gap:0;margin-top:1px}
+  .week.one-line{min-height:49px}
+  .week.two-lines{min-height:58px}
+  .cell{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border:1px solid transparent;border-radius:9px;padding:2px 0;overflow:hidden;min-width:0}
+  .week:not(.one-line):not(.two-lines) .cell{justify-content:center}
+  button.cell:hover{background:#fafafa}
+  .cell[aria-pressed="true"]{border-color:var(--ink)}
+  .day-num{min-width:25px;height:23px;border-radius:7px;display:grid;place-items:center;font-size:15px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums}
+  .other .day-num{color:#aaa}
+  .recorded .day-num{background:var(--wash)}
+  .over .day-num{background:var(--ink);color:white}
+  .amount{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;line-height:12px;font-variant-numeric:tabular-nums}
+  .red{color:var(--red)}
+  .legend{border-top:1px solid var(--line);padding:6px 9px;display:flex;gap:4px 10px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+  .mark{display:inline-block;width:8px;height:8px;border:1px solid var(--ink);border-radius:2px;margin-right:4px}
+  .mark.dark{background:var(--ink)}
+  .baseline{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;font-size:13px;margin-top:8px;min-height:43px}
+  .detail{padding:10px 2px 0}
+  .detail h3{margin:0 0 3px;font-size:16px}
+  .detail h3 span{margin-left:8px;font-size:11px;font-weight:400;color:var(--muted)}
+  .totals{display:flex;gap:12px;font-size:12px;margin-bottom:7px}
+  .record{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;gap:8px;font-size:13px;margin-top:5px}
+  .record small{display:block;color:var(--muted);font-size:11px}
+  .empty{padding:3px 0;color:var(--muted);font-size:12px}
+  .nav{border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding:8px 10px 12px;font-size:13px;color:var(--muted)}
+  .nav .pill{color:var(--ink);padding:4px 16px}
+  .overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:2}
+  .shade{position:absolute;inset:0;background:#0005;opacity:0;transition:opacity .18s}
+  .sheet{position:relative;background:white;width:min(100%,286px);max-height:100%;overflow:auto;border-radius:20px;padding:15px 14px 12px;box-shadow:0 12px 40px #0002;opacity:0;transform:scale(.95);transition:opacity .18s,transform .22s cubic-bezier(.2,.7,.2,1);overscroll-behavior:contain}
+  .overlay.open .shade{opacity:1}
+  .overlay.open .sheet{opacity:1;transform:scale(1)}
+  .sheet h3{margin:0 0 9px;text-align:center;font-size:17px}
+  .wheel-fields{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:6px}
+  .wheel-field{min-width:0;text-align:center;font-size:12px;color:var(--muted)}
+  .wheel-frame{position:relative;margin-top:3px}
+  .wheel-frame::before{content:"";position:absolute;inset:var(--step) 0 auto;height:var(--step);border-radius:8px;background:var(--wash);pointer-events:none}
+  .wheel{position:relative;height:calc(var(--step) * 3);overflow:auto;scrollbar-width:none;scroll-snap-type:y mandatory;overscroll-behavior:contain;touch-action:pan-y;user-select:none;cursor:ns-resize;mask-image:linear-gradient(transparent,#000 34%,#000 66%,transparent)}
+  .wheel::-webkit-scrollbar{display:none}
+  .wheel::before,.wheel::after{display:block;content:"";height:var(--step)}
+  .wheel.dragging{scroll-snap-type:none}
+  .wheel-option{display:block;width:100%;height:var(--step);scroll-snap-align:center;color:#777;font-size:17px;font-variant-numeric:tabular-nums;transition:color .13s}
+  .wheel-option[aria-selected="true"]{color:var(--ink);font-weight:650;cursor:text}
+  .inline-date{position:absolute;inset:var(--step) 0 auto;width:100%;height:var(--step);padding:0 3px;background:#fff;border:1px solid var(--ink);border-radius:8px;text-align:center;font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+  .inline-date[aria-invalid="true"]{border-color:var(--red)}
+  .picked{min-height:18px;margin:5px 0 8px;text-align:center;color:var(--muted);font-size:11px}
+  .picked.error{color:var(--red)}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .actions button{min-height:40px;border-radius:10px;font-size:14px;font-weight:600}
+  .cancel{background:var(--wash)}
+  .jump{background:var(--ink);color:white}
+  @media(max-width:680px){.stage{display:flex;flex-direction:column;width:min(100% - 16px,430px);gap:8px;margin:8px auto}.intro{order:1;padding:4px 8px 12px}.intro h1{font-size:21px}.phone{width:100%;height:calc(100dvh - 16px);border-radius:20px}.intro ol{margin:10px 0}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0s!important}}
+</style>
+</head>
+<body>
+<main class="stage">
+  <aside class="intro">
+    <div class="eyebrow">本地记账 · 明细交互原型</div>
+    <h1>滑动翻月<br>点日期，直接跳转</h1>
+    <ol>
+      <li>在日历数字区域<strong>左右拖动</strong>：左滑下个月，右滑上个月。也可以点箭头。</li>
+      <li>点日历左上角的<strong>完整日期</strong>，打开居中的年月日选择器。</li>
+      <li>上下滑动三列数字，或点中间的数字直接改。点<strong>「跳转」</strong>后，选中日期和当天明细会一起更新。</li>
+    </ol>
+    <p class="hint">电脑可用鼠标拖动，也可用滚轮选择。示例可试 2026 年 10 月 31 日或 2027 年 1 月 1 日。</p>
+  </aside>
+  <section class="phone" aria-label="应用预览">
+    <div class="app" id="app">
+      <div class="status"><span>14:38</span><span>交互原型</span></div>
+      <header class="top"><h2>明细</h2><span class="pill">日历</span></header>
+      <div class="body">
+        <section class="card calendar" aria-label="月历">
+          <div class="month-bar">
+            <button type="button" class="date-title" id="open-picker" aria-haspopup="dialog">
+              <span id="date-title"></span><i class="chevron" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="month-button" id="prev" aria-label="上个月">‹</button>
+            <button type="button" class="month-button" id="next" aria-label="下个月">›</button>
+            <button type="button" class="today" id="today">今天</button>
+          </div>
+          <div class="weekdays" aria-hidden="true"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="month-window" id="month-window"><div class="month-track" id="month-track"></div></div>
+          <div class="legend"><span>− 支出</span><span class="red">+ 收入</span><span><i class="mark dark"></i>超基线</span><span><i class="mark"></i>已选日期</span></div>
+        </section>
+        <div class="baseline card"><span>每日消费基线</span><strong>¥50.00</strong></div>
+        <section class="detail" id="detail" aria-live="polite"></section>
+      </div>
+      <div class="nav" aria-label="应用导航示意"><span>记账</span><span class="pill">明细</span><span>设置</span></div>
+    </div>
+    <div class="overlay" id="overlay" hidden>
+      <div class="shade" id="shade"></div>
+      <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <h3 id="sheet-title" tabindex="-1">选择日期</h3>
+        <form id="picker-form" novalidate>
+          <div class="wheel-fields">
+            <div class="wheel-field">年<div class="wheel-frame"><div class="wheel" data-field="year" role="listbox" aria-label="年" tabindex="0"></div><input class="inline-date" id="year-input" aria-label="编辑年份" inputmode="numeric" maxlength="4" autocomplete="off" aria-describedby="picked" hidden></div></div>
+            <div class="wheel-field">月<div class="wheel-frame"><div class="wheel" data-field="month" role="listbox" aria-label="月" tabindex="0"></div><input class="inline-date" id="month-input" aria-label="编辑月份" inputmode="numeric" maxlength="2" autocomplete="off" aria-describedby="picked" hidden></div></div>
+            <div class="wheel-field">日<div class="wheel-frame"><div class="wheel" data-field="day" role="listbox" aria-label="日" tabindex="0"></div><input class="inline-date" id="day-input" aria-label="编辑日期" inputmode="numeric" maxlength="2" autocomplete="off" aria-describedby="picked" hidden></div></div>
+          </div>
+          <p class="picked" id="picked" aria-live="polite"></p>
+          <div class="actions"><button type="button" class="cancel" id="cancel">取消</button><button class="jump" type="submit">跳转</button></div>
+        </form>
+      </section>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const byId = id => document.getElementById(id);
+  const sampleToday = { year: 2026, month: 11, day: 18 };
+  const range = { first: 1900, last: 2100 };
+  const entries = {
+    "2026-10-31": [{ name:"交通", group:"个人开销", time:"17:45", cents:2850 }],
+    "2026-11-07": [{ name:"礼物", group:"恋爱", time:"20:00", cents:8000 }, { name:"奖金", group:"收入", time:"13:20", cents:24000, income:true }],
+    "2026-11-17": [{ name:"吃饭", group:"个人开销", time:"19:10", cents:10000 }],
+    "2026-11-18": [{ name:"吃饭", group:"个人开销", time:"14:32", cents:8000 }],
+    "2026-12-01": [{ name:"会员", group:"个人开销", time:"08:30", cents:3000 }],
+    "2027-01-01": [{ name:"礼物", group:"恋爱", time:"16:00", cents:5800 }]
+  };
+  const fields = ["year","month","day"];
+  const win = byId("month-window");
+  const track = byId("month-track");
+  const overlay = byId("overlay");
+  const sheet = byId("sheet");
+  const inputs = Object.fromEntries(fields.map(field => [field, byId(field + "-input")]));
+  const motionTime = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 220;
+  const pad = value => String(value).padStart(2,"0");
+  const key = date => date.year + "-" + pad(date.month) + "-" + pad(date.day);
+  const label = date => date.year + " 年 " + date.month + " 月 " + date.day + " 日";
+  const money = cents => (cents / 100).toFixed(2);
+  const daysIn = (year,month) => new Date(year,month,0).getDate();
+  const totals = rows => rows.reduce((sum,row) => {
+    sum[row.income ? "income" : "expense"] += row.cents; return sum;
+  }, {expense:0,income:0});
+  const adjacent = (date,step) => {
+    const jsDate = new Date(date.year,date.month - 1 + step,1);
+    const year = jsDate.getFullYear(), month = jsDate.getMonth() + 1;
+    return { year,month,day: year === sampleToday.year && month === sampleToday.month ? sampleToday.day : 1 };
+  };
+  const inRange = date => date.year >= range.first && date.year <= range.last;
+  const make = (tag,className,text) => {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  };
+  let selected = {...sampleToday};
+  let animating = false;
+  let gesture = null;
+  let blockClick = 0;
+  let draft = {...selected};
+  let editing = null;
+  let closing = false;
+
+  function monthPage(anchor, active) {
+    const page = make("div","month-page");
+    page.inert = !active;
+    if (!active) page.setAttribute("aria-hidden","true");
+    const first = new Date(anchor.year,anchor.month - 1,1).getDay();
+    const count = daysIn(anchor.year,anchor.month);
+    for (let start = 1 - first; start <= count; start += 7) {
+      const week = make("div","week");
+      let lines = 0;
+      for (let offset = start; offset < start + 7; offset++) {
+        const date = { ...anchor,day:offset };
+        const current = offset >= 1 && offset <= count;
+        const cell = make(active && current ? "button" : "div","cell");
+        const shownDay = new Date(anchor.year,anchor.month - 1,offset).getDate();
+        const sum = totals(current ? entries[key(date)] ?? [] : []);
+        if (!current) cell.classList.add("other");
+        if (sum.expense || sum.income || (current && key(date) === key(sampleToday))) cell.classList.add("recorded");
+        if (sum.expense > 5000) cell.classList.add("over");
+        cell.append(make("span","day-num",shownDay));
+        if (sum.expense) cell.append(make("span","amount","−" + money(sum.expense)));
+        if (sum.income) cell.append(make("span","amount red","+" + money(sum.income)));
+        lines = Math.max(lines, Number(Boolean(sum.expense)) + Number(Boolean(sum.income)));
+        if (active && current) {
+          cell.type = "button";
+          cell.setAttribute("aria-pressed",String(key(date) === key(selected)));
+          cell.setAttribute("aria-label",label(date) + (sum.expense ? "，支出 " + money(sum.expense) : "") + (sum.income ? "，收入 " + money(sum.income) : ""));
+          cell.addEventListener("click", () => {
+            if (animating || performance.now() < blockClick) return;
+            selected = date;
+            week.parentElement.querySelectorAll("button.cell").forEach(button => button.setAttribute("aria-pressed",String(button === cell)));
+            renderDetails();
+          });
+        } else if (key(date) === key(anchor) && current) {
+          cell.setAttribute("aria-pressed","true");
+        }
+        week.append(cell);
+      }
+      if (lines) week.classList.add(lines === 2 ? "two-lines" : "one-line");
+      page.append(week);
+    }
+    return page;
+  }
+
+  function renderDetails() {
+    byId("date-title").textContent = label(selected);
+    byId("open-picker").setAttribute("aria-label",label(selected) + "，选择日期");
+    byId("prev").disabled = !inRange(adjacent(selected,-1));
+    byId("next").disabled = !inRange(adjacent(selected,1));
+    const rows = entries[key(selected)] ?? [];
+    const sum = totals(rows);
+    const title = make("h3","",selected.month + " 月 " + selected.day + " 日");
+    title.append(make("span","",(key(selected) === key(sampleToday) ? "今天 · " : "") + rows.length + " 笔"));
+    const summary = make("div","totals");
+    summary.append(make("span","","支出 ¥" + money(sum.expense)),make("span","red","收入 ¥" + money(sum.income)));
+    const detail = byId("detail");
+    detail.replaceChildren(title,summary);
+    if (!rows.length) detail.append(make("div","empty","这天还没有记录"));
+    rows.forEach(row => {
+      const item = make("div","card record");
+      const text = make("div","",row.name);
+      text.append(make("small","",row.group + " · " + row.time));
+      item.append(text, make("span",row.income ? "red" : "",(row.income ? "+" : "−") + "¥" + money(row.cents)));
+      detail.append(item);
+    });
+  }
+
+  function showMonth() {
+    track.style.transition = "none";
+    track.style.transform = "translate3d(-100%,0,0)";
+    track.replaceChildren(monthPage(adjacent(selected,-1),false),monthPage(selected,true),monthPage(adjacent(selected,1),false));
+    win.style.height = track.children[1].offsetHeight + "px";
+    renderDetails();
+  }
+
+  function glide(direction,target) {
+    if (animating) return;
+    if (target && !inRange(target)) target = null;
+    animating = true;
+    const time = motionTime();
+    if (target) {
+      const index = direction > 0 ? 2 : 0;
+      const incoming = monthPage(target,false);
+      track.children[index].replaceWith(incoming);
+      win.style.height = Math.max(track.children[1].offsetHeight,incoming.offsetHeight) + "px";
+    }
+    track.style.transition = "transform " + time + "ms cubic-bezier(.22,.75,.25,1)";
+    track.style.transform = "translate3d(" + (target ? (direction > 0 ? -200 : 0) : -100) + "%,0,0)";
+    const finish = () => {
+      if (target) { selected = target; showMonth(); }
+      animating = false;
+    };
+    if (time) setTimeout(finish,time + 18); else finish();
+  }
+
+  function moveMonth(direction) {
+    const target = adjacent(selected,direction);
+    if (inRange(target)) glide(direction,target);
+  }
+  function jumpTo(date) {
+    if (animating) return;
+    const delta = (date.year - selected.year) * 12 + date.month - selected.month;
+    if (delta) glide(Math.sign(delta),date);
+    else { selected = date; showMonth(); }
+  }
+  byId("prev").addEventListener("click",() => moveMonth(-1));
+  byId("next").addEventListener("click",() => moveMonth(1));
+  byId("today").addEventListener("click",() => jumpTo({...sampleToday}));
+  new ResizeObserver(() => {
+    if (!animating && !gesture && track.children[1]) {
+      win.style.height = track.children[1].offsetHeight + "px";
+    }
+  }).observe(win);
+  win.addEventListener("pointerdown", event => {
+    if (!event.isPrimary || event.button !== 0 || animating) return;
+    gesture = { id:event.pointerId,x:event.clientX,y:event.clientY,locked:false,dx:0 };
+  });
+  win.addEventListener("pointermove", event => {
+    if (gesture?.id !== event.pointerId) return;
+    const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+    if (!gesture.locked) {
+      if (Math.abs(dy) > 9 && Math.abs(dy) > Math.abs(dx)) { gesture = null; return; }
+      if (Math.abs(dx) < 9 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+      gesture.locked = true;
+      win.setPointerCapture(event.pointerId);
+      win.classList.add("dragging");
+      track.style.transition = "none";
+    }
+    gesture.dx = dx;
+    const allowed = inRange(adjacent(selected,dx < 0 ? 1 : -1));
+    const shift = Math.sign(dx) * Math.min(Math.abs(dx),win.clientWidth) * (allowed ? 1 : .22);
+    track.style.transform = "translate3d(calc(-100% + " + shift + "px),0,0)";
+  });
+  function finishSwipe(event,cancelled) {
+    if (gesture?.id !== event.pointerId) return;
+    const {locked,dx} = gesture;
+    gesture = null;
+    if (!locked) return;
+    win.classList.remove("dragging");
+    blockClick = performance.now() + 250;
+    const direction = dx < 0 ? 1 : -1;
+    glide(direction,!cancelled && Math.abs(dx) >= Math.min(54,win.clientWidth * .2) ? adjacent(selected,direction) : null);
+  }
+  win.addEventListener("pointerup",event => finishSwipe(event,false));
+  win.addEventListener("pointercancel",event => finishSwipe(event,true));
+  win.addEventListener("lostpointercapture",event => {
+    if (event.target === win) finishSwipe(event,true);
+  });
+  win.addEventListener("pointerleave",event => { if (!gesture?.locked) finishSwipe(event,true); });
+
+  const wheelControls = Object.fromEntries(Array.from(document.querySelectorAll(".wheel")).map(element => [
+    element.dataset.field, { element, min:element.dataset.field === "year" ? range.first : 1, max:0, drag:null, suppress:0, target:null }
+  ]));
+  const step = () => Number.parseFloat(getComputedStyle(sheet).getPropertyValue("--step"));
+  function wheelPosition(control,value) { return (value - control.min) * step(); }
+  function wheelValue(control) { return Math.min(control.max,Math.max(control.min,control.min + Math.round(control.element.scrollTop / step()))); }
+
+  function populate(field, maximum) {
+    const control = wheelControls[field];
+    if (control.max === maximum) return;
+    control.max = maximum;
+    const options = document.createDocumentFragment();
+    for (let value = control.min; value <= maximum; value++) {
+      const option = make("button","wheel-option",value);
+      option.type = "button";
+      option.tabIndex = -1;
+      option.id = field + "-option-" + value;
+      option.dataset.value = value;
+      option.setAttribute("role","option");
+      option.setAttribute("aria-selected","false");
+      options.append(option);
+    }
+    control.element.replaceChildren(options);
+  }
+
+  function highlight() {
+    fields.forEach(field => {
+      const element = wheelControls[field].element;
+      const current = byId(field + "-option-" + draft[field]);
+      const previous = element.querySelector('[aria-selected="true"]');
+      if (previous && previous !== current) previous.setAttribute("aria-selected","false");
+      current.setAttribute("aria-selected","true");
+      element.setAttribute("aria-activedescendant",current.id);
+    });
+  }
+
+  function alignWheel(field) {
+    const control = wheelControls[field];
+    control.target = null;
+    control.element.scrollTop = wheelPosition(control,draft[field]);
+  }
+
+  function selectValue(field,value) {
+    draft[field] = value;
+    if (field !== "day") {
+      const maximum = daysIn(draft.year,draft.month);
+      const changed = wheelControls.day.max !== maximum;
+      draft.day = Math.min(draft.day,maximum);
+      if (changed) { populate("day",maximum); alignWheel("day"); }
+    }
+    highlight();
+  }
+
+  function glideWheel(field,value) {
+    const control = wheelControls[field];
+    value = Math.max(control.min,Math.min(control.max,value));
+    if (!motionTime()) { selectValue(field,value); alignWheel(field); return; }
+    control.target = value;
+    control.element.scrollTo({top:wheelPosition(control,value),behavior:"smooth"});
+  }
+
+  function showHint(message) {
+    const preview = byId("picked");
+    preview.textContent = message || "滑动选择，点中间数字编辑";
+    preview.classList.toggle("error",Boolean(message));
+  }
+
+  function readValue(field) {
+    const value = inputs[field].value.trim();
+    const control = wheelControls[field];
+    if (/^\d+$/.test(value) && Number(value) >= control.min && Number(value) <= control.max) return Number(value);
+    return null;
+  }
+
+  function finishEdit() {
+    if (!editing) return true;
+    const field = editing, input = inputs[field], control = wheelControls[field];
+    const value = readValue(field);
+    if (value === null) {
+      input.setAttribute("aria-invalid","true");
+      showHint("请输入 " + control.min + " 至 " + control.max + " 的数字");
+      return false;
+    }
+    editing = null;
+    input.hidden = true;
+    input.removeAttribute("aria-invalid");
+    selectValue(field,value);
+    alignWheel(field);
+    showHint();
+    return true;
+  }
+
+  function editField(field) {
+    if (editing === field) { inputs[field].focus(); return; }
+    if (!finishEdit()) { inputs[editing].focus(); return; }
+    fields.forEach(alignWheel);
+    editing = field;
+    const input = inputs[field];
+    input.value = draft[field];
+    input.hidden = false;
+    input.focus({preventScroll:true});
+    input.select();
+  }
+
+  for (const field of fields) {
+    const control = wheelControls[field], element = control.element;
+    element.addEventListener("scroll",() => {
+      if (overlay.hidden || closing || editing === field) return;
+      const value = wheelValue(control);
+      if (control.target === value && Math.abs(element.scrollTop - wheelPosition(control,value)) < 1) control.target = null;
+      if (value !== draft[field]) selectValue(field,value);
+    },{passive:true});
+    element.addEventListener("wheel",event => {
+      if (!event.deltaY) return;
+      event.preventDefault();
+      if (finishEdit()) glideWheel(field,(control.target ?? draft[field]) + Math.sign(event.deltaY));
+    },{passive:false});
+    element.addEventListener("keydown",event => {
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        event.preventDefault();
+        if (finishEdit()) glideWheel(field,(control.target ?? draft[field]) + (event.key === "ArrowUp" ? -1 : 1));
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        editField(field);
+      }
+    });
+    element.addEventListener("click",event => {
+      const option = event.target.closest("[data-value]");
+      if (!option || performance.now() < control.suppress) return;
+      const value = Number(option.dataset.value);
+      if (value === draft[field]) editField(field);
+      else if (finishEdit()) glideWheel(field,value);
+    });
+    element.addEventListener("pointerdown",event => {
+      if (event.button !== 0 || !finishEdit()) return;
+      control.target = null;
+      if (event.pointerType !== "mouse") return;
+      control.drag = {id:event.pointerId,y:event.clientY,start:element.scrollTop,moved:false};
+    });
+    element.addEventListener("pointermove",event => {
+      const drag = control.drag;
+      if (!drag || drag.id !== event.pointerId) return;
+      const dy = event.clientY - drag.y;
+      if (!drag.moved && Math.abs(dy) < 5) return;
+      if (!drag.moved) {
+        drag.moved = true;
+        element.setPointerCapture(event.pointerId);
+        element.classList.add("dragging");
+      }
+      element.scrollTop = drag.start - dy;
+    });
+    function finishWheelDrag(event) {
+      if (control.drag?.id !== event.pointerId) return;
+      const moved = control.drag.moved;
+      control.drag = null;
+      if (!moved) return;
+      const value = wheelValue(control);
+      control.suppress = performance.now() + 250;
+      element.classList.remove("dragging");
+      glideWheel(field,value);
+    }
+    element.addEventListener("pointerup",finishWheelDrag);
+    element.addEventListener("pointercancel",finishWheelDrag);
+    element.addEventListener("lostpointercapture",finishWheelDrag);
+    element.addEventListener("pointerleave",event => { if (!control.drag?.moved) finishWheelDrag(event); });
+    const input = inputs[field];
+    input.addEventListener("input",() => {
+      input.removeAttribute("aria-invalid");
+      showHint();
+    });
+    input.addEventListener("blur",() => {
+      if (editing === field && !closing) finishEdit();
+    });
+    input.addEventListener("keydown",event => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      event.preventDefault();
+      if (finishEdit()) element.focus({preventScroll:true});
+    });
+  }
+
+  function openPicker() {
+    if (!overlay.hidden || animating) return;
+    draft = {...selected};
+    editing = null;
+    for (const input of Object.values(inputs)) { input.hidden = true; input.removeAttribute("aria-invalid"); }
+    overlay.hidden = false;
+    byId("app").inert = true;
+    populate("year",range.last);
+    populate("month",12);
+    populate("day",daysIn(draft.year,draft.month));
+    fields.forEach(alignWheel);
+    highlight();
+    showHint();
+    void sheet.offsetHeight;
+    overlay.classList.add("open");
+    byId("sheet-title").focus({preventScroll:true});
+  }
+  function closePicker() {
+    if (overlay.hidden || closing) return;
+    closing = true;
+    overlay.classList.remove("open");
+    setTimeout(() => {
+      overlay.hidden = true;
+      closing = false;
+      byId("app").inert = false;
+      byId("open-picker").focus({preventScroll:true});
+    },motionTime() ? 250 : 0);
+  }
+
+  byId("open-picker").addEventListener("click",openPicker);
+  byId("cancel").addEventListener("click",closePicker);
+  byId("shade").addEventListener("click",closePicker);
+  byId("picker-form").addEventListener("submit",event => {
+    event.preventDefault();
+    if (closing) return;
+    if (!finishEdit()) { inputs[editing].focus(); return; }
+    for (const field of fields) {
+      const control = wheelControls[field];
+      selectValue(field,control.target ?? wheelValue(control));
+      alignWheel(field);
+    }
+    closePicker();
+    jumpTo({...draft});
+  });
+  sheet.addEventListener("keydown",event => {
+    if (event.key === "Escape") { event.preventDefault(); closePicker(); }
+    if (event.key !== "Tab") return;
+    const focusables = [...sheet.querySelectorAll("button, input, [tabindex='0']")]
+      .filter(element => element.tabIndex >= 0 && element.getClientRects().length);
+    const first = focusables[0], last = focusables.at(-1);
+    if ((event.shiftKey && (document.activeElement === first || document.activeElement === byId("sheet-title"))) || (!event.shiftKey && document.activeElement === last)) {
+      event.preventDefault(); (event.shiftKey ? last : first).focus();
+    }
+  });
+  showMonth();
+})();
+</script>
+</body>
+</html>

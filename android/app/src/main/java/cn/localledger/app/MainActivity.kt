@@ -1,7 +1,11 @@
 package cn.localledger.app
 
+import android.content.SharedPreferences
+import android.content.ContentResolver
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -10,15 +14,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,11 +47,59 @@ import java.util.UUID
 internal val Ink = Color(0xFF191919)
 internal val Red = Color(0xFFC72D39)
 
-class LedgerViewModel(private val repo: LedgerRepository) : ViewModel() {
+class LedgerViewModel(private val repo: LedgerRepository, private val settings: SharedPreferences) : ViewModel() {
+    private val baselineKey = "daily_expense_baseline_cents"
+    var expenseBaseline by mutableStateOf(settings.getLong(baselineKey, -1L).takeIf { it >= 0L }); private set
+
+    fun saveExpenseBaseline(cents: Long?) {
+        val edit = settings.edit()
+        if (cents == null) edit.remove(baselineKey) else edit.putLong(baselineKey, cents)
+        edit.apply()
+        expenseBaseline = cents
+    }
+
     val snapshot = MutableStateFlow(Snapshot())
     var busy by mutableStateOf(false); private set
     var error by mutableStateOf<String?>(null)
     var loaded by mutableStateOf(false); private set
+    private var pendingExport by mutableStateOf<FlowExport?>(null)
+    private var writingExport by mutableStateOf(false)
+    internal val exportBusy get() = pendingExport != null || writingExport
+
+    internal fun startExport(request: FlowExport): Boolean {
+        if (exportBusy || request.snapshot.entries.isEmpty()) return false
+        pendingExport = request
+        return true
+    }
+
+    internal fun exportPickerUnavailable() {
+        pendingExport = null
+        error = "无法打开系统文件选择器"
+    }
+
+    internal fun finishExport(resolver: ContentResolver, uri: Uri?, done: (Int) -> Unit) {
+        val request = pendingExport
+        pendingExport = null
+        if (uri == null) return
+        if (request == null) {
+            error = "导出会话已结束，请返回流水页重新导出"
+            return
+        }
+        writingExport = true
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { request.writeTo(resolver, uri) }
+                done(request.snapshot.entries.size)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                error = "Excel 保存失败，请换一个本地位置重试"
+            } finally {
+                writingExport = false
+            }
+        }
+    }
+
     init { refresh() }
     private fun refresh() { viewModelScope.launch { try { snapshot.value = withContext(Dispatchers.IO) { repo.load() }; loaded = true } catch (e: Exception) { error = e.message ?: "读取失败" } } }
     private fun perform(action: suspend () -> Unit, success: () -> Unit = {}) {
@@ -74,7 +130,8 @@ class MainActivity : ComponentActivity() {
         val vm = ViewModelProvider(this, object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val database = Room.databaseBuilder(applicationContext, LedgerDatabase::class.java, "ledger.db").build()
-                return LedgerViewModel(LedgerRepository(database)) as T
+                val settings = applicationContext.getSharedPreferences("ledger_settings", MODE_PRIVATE)
+                return LedgerViewModel(LedgerRepository(database), settings) as T
             }
         })[LedgerViewModel::class.java]
         setContent {
@@ -89,9 +146,13 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable private fun LedgerApp(vm: LedgerViewModel) {
     val data by vm.snapshot.collectAsStateWithLifecycle()
-    var page by remember { mutableStateOf("记账") }
+    var page by rememberSaveable { mutableStateOf("记账") }
     var groupId by remember { mutableStateOf<String?>(null) }
-    var detailsId by remember { mutableStateOf<String?>(null) }
+    var detailsId by rememberSaveable { mutableStateOf<String?>(null) }
+    var calendarMode by rememberSaveable { mutableStateOf(true) }
+    var calendarDay by rememberSaveable { mutableStateOf<Long?>(null) }
+    val calendarScroll = rememberLazyListState()
+    val flowState = rememberSaveableStateHolder()
     var amount by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(LocalDate.now().toString()) }
     var capturedTime by remember { mutableStateOf(LocalTime.now().withNano(0)) }
@@ -107,23 +168,41 @@ class MainActivity : ComponentActivity() {
     var editingGroup by remember { mutableStateOf<String?>(null) }
     var editingEntry by remember { mutableStateOf<Entry?>(null) }
     val selected = data.groups.find { it.id == groupId }
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    var today by remember { mutableStateOf(LocalDate.now()) }
+    val month = YearMonth.from(today)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
-        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) month = YearMonth.now() }
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) today = LocalDate.now() }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    LaunchedEffect(Unit) { while (true) { delay(60_000); month = YearMonth.now() } }
+    LaunchedEffect(Unit) { while (true) { delay(60_000); today = LocalDate.now() } }
     val summary = data.summary(month)
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val resolver = LocalContext.current.applicationContext.contentResolver
+    val exportContract = remember { FlowDocumentContract() }
+    val exportLauncher = rememberLauncherForActivityResult(exportContract) { uri ->
+        vm.finishExport(resolver, uri) { count ->
+            scope.launch { snack.showSnackbar("已保存 Excel，共 $count 笔流水") }
+        }
+    }
     androidx.activity.compose.BackHandler(enabled = selected != null || page == "分类管理" || detailsId != null) {
         if (sheet) sheet = false else { groupId = null; detailsId = null; page = "记账" }
     }
     Scaffold(snackbarHost = { SnackbarHost(snack) }, bottomBar = {
         if (selected == null && editingEntry == null) NavigationBar(containerColor = Color.White) {
-            listOf("记账", "明细", "设置").forEach { label -> NavigationBarItem(selected = page == label, onClick = { page = label; detailsId = null }, icon = { Text(label) }, colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFF2F2F2))) }
+            listOf("记账", "明细", "设置").forEach { label ->
+                NavigationBarItem(selected = page == label, onClick = {
+                    if (label == "明细" && (page != label || detailsId != null)) {
+                        calendarMode = true
+                        calendarDay = null
+                        scope.launch { calendarScroll.scrollToItem(0) }
+                    }
+                    page = label
+                    detailsId = null
+                }, icon = { Text(label) }, colors = NavigationBarItemDefaults.colors(indicatorColor = Color(0xFFF2F2F2)))
+            }
         }
     }) { insets ->
         Column(Modifier.fillMaxSize().padding(insets).imePadding().padding(horizontal = 20.dp)) {
@@ -153,8 +232,12 @@ class MainActivity : ComponentActivity() {
                 Spacer(Modifier.height(22.dp))
                 Button(onClick = { try { Money.parse(amount); LocalDate.parse(date); sheet = true } catch (e: Exception) { vm.error = e.message ?: "检查金额和日期" } }, colors = ButtonDefaults.buttonColors(containerColor = entryColor), enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) { Text("确定") }
             } else {
-                Text(if (page == "明细" && detailsId != null) "${data.groups.find { it.id == detailsId }?.name ?: "分类"}明细" else page, fontSize = 28.sp)
-                Spacer(Modifier.height(16.dp))
+                if (page == "明细" && detailsId == null) {
+                    DetailsHeader(calendarMode) { calendarMode = it }
+                } else {
+                    Text(if (page == "明细") "分类流水" else page, fontSize = 28.sp)
+                }
+                Spacer(Modifier.height(if (page == "明细" && detailsId == null) 10.dp else 16.dp))
                 when (page) {
                     "记账" -> {
                         Text("${month.year}年${month.monthValue}月", color = Color.Gray)
@@ -185,20 +268,41 @@ class MainActivity : ComponentActivity() {
                                 }
                         }
                     }
-                    "明细" -> LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        val rows = data.entries.filter { it.deletedAt == null && (detailsId == null || data.categories.find { c -> c.id == it.categoryId }?.groupId == detailsId) }
-                        if (rows.isEmpty()) item { Text("还没有记录", color = Color.Gray) }
-                        items(rows, key = { it.id }) { entry ->
-                            val category = data.categories.first { it.id == entry.categoryId }; val group = data.groups.first { it.id == category.groupId }
-                            OutlinedCard(onClick = { editingEntry = entry }, enabled = !vm.busy, border = BorderStroke(1.dp, if (group.direction == Direction.INCOME) Red else Ink), colors = CardDefaults.outlinedCardColors(containerColor = Color.White)) {
-                                Column(Modifier.fillMaxWidth().padding(14.dp)) { Text("${group.name} / ${category.name}"); Text("${entry.occurredAt.replace('T', ' ')}  ${if (group.direction == Direction.INCOME) "+" else "−"} ¥ ${Money.format(entry.cents)}", color = if (group.direction == Direction.INCOME) Red else Ink); if (entry.note.isNotBlank()) Text(entry.note, color = Color.Gray); Text("点击修改 ›", fontSize = 12.sp, color = Color.Gray) }
+                    "明细" -> {
+                        if (detailsId == null && calendarMode) {
+                            CalendarDetails(
+                                data = data,
+                                loaded = vm.loaded,
+                                today = today,
+                                selectedDate = calendarDay?.let(LocalDate::ofEpochDay) ?: today,
+                                baselineCents = vm.expenseBaseline,
+                                scrollState = calendarScroll,
+                                enabled = !vm.busy,
+                                onSelect = { calendarDay = it.toEpochDay() },
+                                onBaselineChange = vm::saveExpenseBaseline,
+                                onEdit = { editingEntry = it },
+                            )
+                        } else {
+                            flowState.SaveableStateProvider(detailsId?.let { "group:$it" } ?: "all") {
+                                FlowDetails(
+                                    data = data, initialGroupId = detailsId, today = today,
+                                    loaded = vm.loaded, enabled = !vm.busy, exportBusy = vm.exportBusy,
+                                    onExitGroup = { detailsId = null; page = "记账" },
+                                    onExport = { request ->
+                                        if (vm.startExport(request)) {
+                                            try { exportLauncher.launch(request.fileName) }
+                                            catch (_: android.content.ActivityNotFoundException) { vm.exportPickerUnavailable() }
+                                        }
+                                    },
+                                    onEdit = { editingEntry = it },
+                                )
                             }
                         }
                     }
                     "设置" -> {
                         TextButton(onClick = { page = "分类管理" }) { Text("分类管理 ›") }
-                        Spacer(Modifier.height(18.dp)); Text("本地记账 0.1.3", fontSize = 18.sp)
-                        Text("明细中点击记录可修改；分类管理支持大类和小类改名、删除空分类及停用。筛选、导出与备份恢复将随后续阶段交付。", color = Color.Gray)
+                        Spacer(Modifier.height(18.dp)); Text("本地记账 0.1.7", fontSize = 18.sp)
+                        Text("明细支持日历、按区间查看流水、记录修改和导出 Excel。分类管理可改名、删除空分类或停用分类。", color = Color.Gray)
                     }
                     "分类管理" -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { TextButton(onClick = { newGroup = true }) { Text("＋ 新建大类") } }

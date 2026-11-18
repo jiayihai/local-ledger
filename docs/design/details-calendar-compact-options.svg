@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1184" height="884" viewBox="0 0 1184 884" role="img" aria-labelledby="title desc">
+  <title id="title">明细日历 · 三种紧凑布局</title>
+  <desc id="desc">三个同尺寸手机页面并排比较。A 每周等高；B 无金额周更矮；C 默认只看选中日期所在周，点展开月历可显示整月。三版用同一组示例账目，基线设为 50 元。</desc>
+  <style>
+    text{font-family:Microsoft YaHei,PingFang SC,sans-serif;fill:#191919}
+    .muted{fill:#666}.red{fill:#c72d39}.white{fill:#fff}.light{fill:#a0a0a0}
+    .heading{font-size:22px;font-weight:700}.h2{font-size:16px;font-weight:700}
+    .body{font-size:13px}.small{font-size:11px}.calendar{fill:#fff;stroke:#e0e0e0}
+    .date,.amount{font-family:Segoe UI,Arial,sans-serif;text-anchor:middle}
+    .date{font-size:15px;font-weight:400}.amount{font-size:10px;font-weight:600}
+    .rule{stroke:#e8e8e8}.wash{fill:#f2f2f2}
+  </style>
+  <defs>
+    <path id="arrow" d="M-2.5 -4 1.5 0 -2.5 4" fill="none" stroke="#191919" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <g id="shell">
+      <rect width="360" height="692" rx="27" fill="#fafafa" stroke="#dedede"/>
+      <text x="23" y="27" class="small">14:38</text>
+      <g transform="translate(305 19)" fill="#191919">
+        <path d="M0 8V5h3v3zm5 0V3h3v5zm5 0V1h3v7z"/><rect x="20" width="17" height="9" rx="2.5" fill="none" stroke="#191919"/><rect x="22" y="2" width="13" height="5" rx="1"/>
+      </g>
+      <text x="17" y="65" class="heading">明细</text>
+      <rect x="236" y="42" width="108" height="30" rx="10" class="wash"/>
+      <rect x="238" y="44" width="52" height="26" rx="8" fill="#fff"/>
+      <text x="264" y="61" class="small" text-anchor="middle">日历</text><text x="317" y="61" class="small muted" text-anchor="middle">列表</text>
+      <line x1="1" y1="635" x2="359" y2="635" class="rule"/>
+      <rect x="149" y="644" width="62" height="27" rx="11" class="wash"/>
+      <text x="60" y="663" class="body muted" text-anchor="middle">记账</text><text x="180" y="663" class="body" text-anchor="middle">明细</text><text x="300" y="663" class="body muted" text-anchor="middle">设置</text>
+      <rect x="130" y="682" width="100" height="3" rx="1.5" fill="#191919"/>
+    </g>
+    <g id="month-bar">
+      <use xlink:href="#arrow" transform="translate(32 18) scale(-1 1)"/>
+      <text x="52" y="23" class="h2">2026 年 11 月</text>
+      <use xlink:href="#arrow" transform="translate(259 18)"/>
+      <text x="330" y="23" class="body" text-anchor="end">今天</text>
+      <line x1="23" y1="37" x2="337" y2="37" class="rule"/>
+    </g>
+    <g id="week-bar" class="small muted" text-anchor="middle">
+      <text x="39">日</text><text x="86">一</text><text x="133">二</text><text x="180">三</text>
+      <text x="227">四</text><text x="274">五</text><text x="321">六</text>
+    </g>
+    <rect id="dark-date" x="-13" y="-15.5" width="26" height="22" rx="7" fill="#191919"/>
+    <g id="row-one">
+      <text x="39" class="date">1</text><text x="86" class="date">2</text><text x="133" class="date">3</text>
+      <text x="180" class="date">4</text><text x="227" class="date">5</text><text x="274" class="date">6</text>
+      <g transform="translate(321)">
+        <use xlink:href="#dark-date"/><text class="date white">7</text>
+        <text y="18" class="amount">−80.00</text><text y="30" class="amount red">+240.00</text>
+      </g>
+    </g>
+    <g id="row-two">
+      <text x="39" class="date">8</text><text x="86" class="date">9</text><text x="133" class="date">10</text><text x="180" class="date">11</text>
+      <text x="227" class="date">12</text><text x="274" class="date">13</text><text x="321" class="date">14</text>
+    </g>
+    <g id="row-three">
+      <text x="39" class="date">15</text><text x="86" class="date">16</text>
+      <g transform="translate(133)">
+        <use xlink:href="#dark-date"/><text class="date white">17</text><text y="18" class="amount">−100.00</text>
+      </g>
+      <g transform="translate(180)">
+        <rect x="-22" y="-19" width="44" height="44" rx="9" fill="none" stroke="#191919" stroke-width="1.2"/>
+        <use xlink:href="#dark-date"/><text class="date white">18</text><text y="18" class="amount">−80.00</text>
+      </g>
+      <text x="227" class="date">19</text><text x="274" class="date">20</text><text x="321" class="date">21</text>
+    </g>
+    <g id="row-four">
+      <text x="39" class="date">22</text><text x="86" class="date">23</text><text x="133" class="date">24</text><text x="180" class="date">25</text>
+      <text x="227" class="date">26</text><text x="274" class="date">27</text><text x="321" class="date">28</text>
+    </g>
+    <g id="row-five">
+      <text x="39" class="date">29</text><text x="86" class="date">30</text><text x="133" class="date light">1</text><text x="180" class="date light">2</text>
+      <text x="227" class="date light">3</text><text x="274" class="date light">4</text><text x="321" class="date light">5</text>
+    </g>
+    <g id="legend">
+      <line x1="23" x2="337" class="rule"/>
+      <text x="24" y="21" class="small">− 支出</text><text x="74" y="21" class="small red">+ 收入</text>
+      <rect x="126" y="12" width="9" height="9" rx="2.5" fill="#191919"/><text x="140" y="21" class="small muted">超基线</text>
+      <rect x="186" y="12" width="9" height="9" rx="2.5" fill="none" stroke="#191919"/><text x="200" y="21" class="small muted">已选日期</text>
+    </g>
+    <g id="day-details">
+      <rect x="12" width="336" height="48" rx="15" class="calendar"/>
+      <text x="25" y="29" class="body">每日消费基线</text>
+      <text x="317" y="29" class="body" text-anchor="end">¥50.00</text><use xlink:href="#arrow" transform="translate(331 24)"/>
+      <text x="16" y="78" class="h2">11 月 18 日</text>
+      <text x="110" y="78" class="small muted">今天 · 1 笔</text>
+      <text x="16" y="101" class="body">支出 ¥80.00</text>
+      <text x="108" y="101" class="body red">收入 ¥0.00</text>
+      <rect x="12" y="114" width="336" height="58" rx="15" class="calendar"/>
+      <text x="25" y="137" class="body">吃饭</text>
+      <text x="25" y="156" class="small muted">个人开销 · 14:32</text>
+      <text x="317" y="137" class="body" text-anchor="end">−¥80.00</text>
+      <use xlink:href="#arrow" transform="translate(331 132)"/>
+      <text x="317" y="156" class="small muted" text-anchor="end">修改</text>
+    </g>
+  </defs>
+
+  <rect width="1184" height="884" fill="#f4f4f4"/>
+  <text x="28" y="39" class="heading">明细日历 · 紧凑布局对照</text>
+  <text x="28" y="63" class="body muted">同一组示例账目与屏幕尺寸。消费基线和逐笔修改三版相同。</text>
+
+  <g transform="translate(24 149)">
+    <text x="4" y="-42" class="h2">A　等高紧凑</text>
+    <text x="4" y="-19" class="body muted">每周约 54 dp，日期位置稳定</text>
+    <use xlink:href="#shell"/>
+    <rect x="12" y="84" width="336" height="359" rx="16" class="calendar"/>
+    <use xlink:href="#month-bar" y="88"/><use xlink:href="#week-bar" y="146"/>
+    <use xlink:href="#row-one" y="175"/><use xlink:href="#row-two" y="229"/>
+    <use xlink:href="#row-three" y="283"/><use xlink:href="#row-four" y="337"/><use xlink:href="#row-five" y="391"/>
+    <use xlink:href="#legend" y="409"/>
+    <use xlink:href="#day-details" y="453"/>
+    <text x="5" y="723" class="body muted">保留整月，只收紧间距和日期底块</text>
+  </g>
+
+  <g transform="translate(412 149)">
+    <text x="4" y="-42" class="h2">B　按周压缩（推荐）</text>
+    <text x="4" y="-19" class="body muted">空白周约 44 dp，有金额时按需加高</text>
+    <use xlink:href="#shell"/>
+    <rect x="12" y="84" width="336" height="332" rx="16" class="calendar"/>
+    <use xlink:href="#month-bar" y="88"/><use xlink:href="#week-bar" y="146"/>
+    <use xlink:href="#row-one" y="175"/><use xlink:href="#row-two" y="233"/>
+    <use xlink:href="#row-three" y="277"/><use xlink:href="#row-four" y="326"/><use xlink:href="#row-five" y="370"/>
+    <use xlink:href="#legend" y="382"/>
+    <use xlink:href="#day-details" y="426"/>
+    <text x="5" y="723" class="body muted">整月仍可见，稀疏月份会更紧凑</text>
+  </g>
+
+  <g transform="translate(800 149)">
+    <text x="4" y="-42" class="h2">C　一周 / 整月切换</text>
+    <text x="4" y="-19" class="body muted">默认显示选中周，需要时展开整月</text>
+    <use xlink:href="#shell"/>
+    <rect x="12" y="84" width="336" height="182" rx="16" class="calendar"/>
+    <use xlink:href="#arrow" transform="translate(32 106) scale(-1 1)"/>
+    <text x="52" y="111" class="h2">11 月 15–21 日</text>
+    <use xlink:href="#arrow" transform="translate(259 106)"/>
+    <text x="330" y="111" class="body" text-anchor="end">今天</text>
+    <line x1="23" y1="125" x2="337" y2="125" class="rule"/>
+    <use xlink:href="#week-bar" y="146"/><use xlink:href="#row-three" y="175"/>
+    <use xlink:href="#legend" y="205"/>
+    <text x="173" y="251" class="body" text-anchor="middle">展开月历</text>
+    <use xlink:href="#arrow" transform="translate(208 247) rotate(90)"/>
+    <use xlink:href="#day-details" y="276"/>
+    <text x="5" y="723" class="body muted">为明细留最多空间，查远日期多一步</text>
+  </g>
+</svg>
