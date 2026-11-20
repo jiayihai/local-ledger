@@ -11,6 +11,8 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
+import java.time.YearMonth
 
 @RunWith(AndroidJUnit4::class)
 class DatabaseTest {
@@ -192,5 +194,72 @@ class DatabaseTest {
         try { repo.updateEntry(deleted.entries.single(), "food", 1, java.time.LocalDate.of(2026, 11, 17), "") } catch (_: IllegalArgumentException) { deletedRejected = true }
         assertTrue(deletedRejected)
         assertEquals(deleted, repo.load())
+    }
+
+    @Test fun deletingAndUndoingOneEntryUpdatesAllViewsAndRestoresItsOriginalData() = runBlocking {
+        val entry = Entry("record", "food", 8000, "2026-11-17T12:00:00", "测试账目", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        val remaining = entry.copy(id = "remaining", cents = 4000, note = "")
+        repo.replaceAll(Snapshot(
+            listOf(Group("personal", "个人", Direction.EXPENSE)),
+            listOf(Category("food", "personal", "饮食")),
+            listOf(entry, remaining),
+        ))
+        val original = repo.load()
+        val month = YearMonth.of(2026, 11)
+        val day = LocalDate.of(2026, 11, 17)
+        val range = LedgerPeriod.MONTH.range(day)
+        val receipt = repo.deleteEntry(entry)
+        val deleted = repo.load()
+        assertEquals(entry.copy(deletedAt = receipt.stamp), deleted.entries.first { it.id == entry.id })
+        assertEquals(Summary(4000, 0), deleted.summary(month))
+        assertFalse(deleted.daysIn(month).getValue(day).exceeds(5000))
+        assertEquals(listOf(remaining), deleted.flow(range).entries)
+        repo.undoDeleteEntry(receipt)
+        val restored = repo.load()
+        assertEquals(original, restored)
+        assertEquals(Summary(12000, 0), restored.summary(month))
+        assertTrue(restored.daysIn(month).getValue(day).exceeds(5000))
+    }
+
+    @Test fun staleDeleteAndUndoRequestsCannotChangeAnotherRevision() = runBlocking {
+        val entry = Entry("record", "food", 8000, "2026-11-17T12:00:00", "", "2026-11-17T04:00:00Z", "2026-11-17T04:00:00Z")
+        repo.replaceAll(Snapshot(listOf(Group("personal", "个人", Direction.EXPENSE)), listOf(Category("food", "personal", "饮食")), listOf(entry)))
+        assertTrue(runCatching { repo.deleteEntry(entry.copy(cents = 1)) }.exceptionOrNull() is IllegalStateException)
+        val first = repo.deleteEntry(entry)
+        assertTrue(runCatching { repo.deleteEntry(entry) }.exceptionOrNull() is IllegalStateException)
+        repo.undoDeleteEntry(first)
+        val second = repo.deleteEntry(entry)
+        assertTrue(runCatching { repo.undoDeleteEntry(first) }.exceptionOrNull() is IllegalStateException)
+        assertEquals(entry.copy(deletedAt = second.stamp), repo.load().entries.single())
+        repo.undoDeleteEntry(second)
+        assertEquals(entry, repo.load().entries.single())
+    }
+
+    @Test fun startupReadsCatalogAndMonthlyTotalsWithoutLoadingHistory() = runBlocking {
+        val record = Entry("first", "food", 1000, "2026-11-01T00:00", "", "2026-11-01T00:00:00Z", "2026-11-01T00:00:00Z")
+        val history = listOf(
+            record,
+            record.copy(id = "last", cents = 2001, occurredAt = "2026-11-30T23:59:59.999"),
+            record.copy(id = "salary", categoryId = "pay", cents = 5000),
+            record.copy(id = "deleted", cents = 9999, deletedAt = 1),
+            record.copy(id = "last-month", occurredAt = "2026-10-31T23:59:59"),
+            record.copy(id = "next-month", occurredAt = "2026-12-01T00:00"),
+        )
+        val catalog = Snapshot(
+            listOf(Group("old", "个人", Direction.EXPENSE, active = false), Group("money", "收入", Direction.INCOME)),
+            listOf(Category("food", "old", "饮食", active = false), Category("pay", "money", "工资")),
+        )
+        repo.replaceAll(catalog.copy(entries = history))
+        val november = YearMonth.of(2026, 11)
+        val home = repo.loadHome(november)
+        assertEquals(catalog.copy(groups = catalog.groups.sortedBy { it.id }), home.catalog)
+        assertEquals(mapOf("old" to 3001L, "money" to 5000L), home.groupTotals)
+        assertEquals(repo.load().summary(november), home.summary)
+        assertEquals(Summary(1000, 0), repo.loadHome(november.plusMonths(1)).summary)
+        assertEquals(
+            setOf("first", "last", "salary"),
+            repo.loadEntries(LedgerDateRange(november.atDay(1), november.atEndOfMonth())).map { it.id }.toSet(),
+        )
+        assertEquals(mapOf("food" to 5L, "pay" to 1L), repo.loadHistoryCounts())
     }
 }

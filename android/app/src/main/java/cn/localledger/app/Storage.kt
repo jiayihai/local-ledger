@@ -2,6 +2,8 @@ package cn.localledger.app
 
 import androidx.room.*
 import cn.localledger.core.*
+import java.time.Instant
+import java.time.YearMonth
 
 @Entity(tableName = "ledger_groups", indices = [Index(value = ["name"], unique = true)])
 data class GroupRow(@PrimaryKey val id: String, val name: String, val direction: String, val sortOrder: Int, val active: Boolean)
@@ -10,10 +12,29 @@ data class CategoryRow(@PrimaryKey val id: String, val groupId: String, val name
 @Entity(tableName = "ledger_entries", foreignKeys = [ForeignKey(entity = CategoryRow::class, parentColumns = ["id"], childColumns = ["categoryId"])], indices = [Index("categoryId"), Index("occurredAt")])
 data class EntryRow(@PrimaryKey val id: String, val categoryId: String, val cents: Long, val occurredAt: String, val note: String, val createdAt: String, val updatedAt: String, val deletedAt: Long?)
 
+data class GroupTotalRow(val groupId: String, val cents: Long)
+data class CategoryHistoryRow(val categoryId: String, val count: Long)
+
 @Dao interface LedgerDao {
     @Query("SELECT * FROM ledger_groups ORDER BY sortOrder, id") suspend fun groups(): List<GroupRow>
     @Query("SELECT * FROM ledger_categories ORDER BY sortOrder, id") suspend fun categories(): List<CategoryRow>
     @Query("SELECT * FROM ledger_entries ORDER BY occurredAt DESC, id") suspend fun entries(): List<EntryRow>
+    @Query("""
+        SELECT * FROM ledger_entries
+        WHERE occurredAt >= :start AND occurredAt < :endExclusive AND deletedAt IS NULL
+        ORDER BY occurredAt DESC, id
+    """)
+    suspend fun entriesIn(start: String, endExclusive: String): List<EntryRow>
+    @Query("""
+        SELECT category.groupId AS groupId, SUM(entry.cents) AS cents
+        FROM ledger_entries AS entry
+        JOIN ledger_categories AS category ON category.id = entry.categoryId
+        WHERE entry.occurredAt >= :start AND entry.occurredAt < :endExclusive AND entry.deletedAt IS NULL
+        GROUP BY category.groupId
+    """)
+    suspend fun groupTotalsIn(start: String, endExclusive: String): List<GroupTotalRow>
+    @Query("SELECT categoryId, COUNT(*) AS count FROM ledger_entries GROUP BY categoryId")
+    suspend fun historyCounts(): List<CategoryHistoryRow>
     @Query("SELECT * FROM ledger_entries WHERE id = :entryId") suspend fun entry(entryId: String): EntryRow?
     @Insert suspend fun addGroup(row: GroupRow)
     @Insert suspend fun addCategory(row: CategoryRow)
@@ -33,11 +54,40 @@ data class EntryRow(@PrimaryKey val id: String, val categoryId: String, val cent
     @Query("UPDATE ledger_groups SET name = :name WHERE id = :groupId") suspend fun renameGroup(groupId: String, name: String)
     @Query("UPDATE ledger_entries SET categoryId = :categoryId, cents = :cents, occurredAt = :occurredAt, note = :note, updatedAt = :updatedAt WHERE id = :entryId AND deletedAt IS NULL")
     suspend fun updateEntry(entryId: String, categoryId: String, cents: Long, occurredAt: String, note: String, updatedAt: String): Int
+    @Query("UPDATE ledger_entries SET deletedAt = :stamp WHERE id = :entryId AND deletedAt IS NULL")
+    suspend fun markEntryDeleted(entryId: String, stamp: Long): Int
+    @Query("UPDATE ledger_entries SET deletedAt = NULL WHERE id = :entryId AND deletedAt = :stamp")
+    suspend fun unmarkEntryDeleted(entryId: String, stamp: Long): Int
 }
 @Database(entities = [GroupRow::class, CategoryRow::class, EntryRow::class], version = 1, exportSchema = true)
 abstract class LedgerDatabase : RoomDatabase() { abstract fun ledger(): LedgerDao }
 
+internal data class EntryDeletion(val entryId: String, val stamp: Long)
+internal data class LedgerHome(
+    val month: YearMonth,
+    val catalog: Snapshot,
+    val groupTotals: Map<String, Long>,
+    val summary: Summary,
+)
+
 class LedgerRepository(private val database: LedgerDatabase) {
+    private var lastDeletionStamp = 0L
+
+    internal suspend fun deleteEntry(original: Entry): EntryDeletion = database.withTransaction {
+        val dao = database.ledger()
+        val current = dao.entry(original.id)?.toEntry() ?: error("这笔记录已不存在")
+        check(current.deletedAt == null) { "这笔记录已删除" }
+        check(current == original) { "记录已变化，请重新选择后再删除" }
+        val stamp = maxOf(Instant.now().toEpochMilli(), lastDeletionStamp + 1)
+        check(dao.markEntryDeleted(original.id, stamp) == 1) { "无法删除这笔记录" }
+        lastDeletionStamp = stamp
+        EntryDeletion(original.id, stamp)
+    }
+
+    internal suspend fun undoDeleteEntry(deletion: EntryDeletion) = database.withTransaction {
+        check(database.ledger().unmarkEntryDeleted(deletion.entryId, deletion.stamp) == 1) { "这笔删除已无法撤销" }
+    }
+
     suspend fun renameGroup(groupId: String, name: String) = database.withTransaction {
         val dao = database.ledger()
         val clean = name.trim()
@@ -111,11 +161,30 @@ class LedgerRepository(private val database: LedgerDatabase) {
             snapshot.entries.forEach { dao.addEntry(EntryRow(it.id, it.categoryId, it.cents, it.occurredAt, it.note, it.createdAt, it.updatedAt, it.deletedAt)) }
         }
     }
+    internal suspend fun loadHome(month: YearMonth): LedgerHome = database.withTransaction {
+        val dao = database.ledger()
+        val catalog = dao.catalog()
+        val totals = dao.groupTotalsIn(month.atDay(1).toString(), month.plusMonths(1).atDay(1).toString())
+            .associate { it.groupId to it.cents }
+        var expense = 0L
+        var income = 0L
+        catalog.groups.forEach { group ->
+            val cents = totals[group.id] ?: 0L
+            if (group.direction == Direction.INCOME) income = Math.addExact(income, cents)
+            else expense = Math.addExact(expense, cents)
+        }
+        LedgerHome(month, catalog, totals, Summary(expense, income))
+    }
+
+    internal suspend fun loadEntries(range: LedgerDateRange): List<Entry> =
+        database.ledger().entriesIn(range.start.toString(), range.end.plusDays(1).toString()).map { it.toEntry() }
+
+    internal suspend fun loadHistoryCounts(): Map<String, Long> =
+        database.ledger().historyCounts().associate { it.categoryId to it.count }
+
     suspend fun load(): Snapshot = database.withTransaction {
         val dao = database.ledger()
-        Snapshot(dao.groups().map { Group(it.id, it.name, Direction.valueOf(it.direction), it.sortOrder, it.active) },
-            dao.categories().map { Category(it.id, it.groupId, it.name, it.sortOrder, it.active) },
-            dao.entries().map { it.toEntry() })
+        dao.catalog().copy(entries = dao.entries().map { it.toEntry() })
     }
     suspend fun group(name: String, direction: Direction) = database.withTransaction {
         val clean = name.trim(); require(clean.isNotEmpty() && clean.length <= 40) { "名称请填写 1 至 40 个字符" }
@@ -138,3 +207,8 @@ class LedgerRepository(private val database: LedgerDatabase) {
 }
 
 private fun EntryRow.toEntry() = Entry(id, categoryId, cents, occurredAt, note, createdAt, updatedAt, deletedAt)
+
+private suspend fun LedgerDao.catalog() = Snapshot(
+    groups = groups().map { Group(it.id, it.name, Direction.valueOf(it.direction), it.sortOrder, it.active) },
+    categories = categories().map { Category(it.id, it.groupId, it.name, it.sortOrder, it.active) },
+)

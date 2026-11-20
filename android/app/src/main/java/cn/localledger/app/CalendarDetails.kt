@@ -1,8 +1,10 @@
 package cn.localledger.app
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -71,18 +73,38 @@ internal fun DetailsHeader(calendarMode: Boolean, onModeChange: (Boolean) -> Uni
 @Composable
 internal fun CalendarDetails(
     data: Snapshot,
-    loaded: Boolean,
+    catalogReady: Boolean,
+    revision: Long,
+    readEntries: suspend (LedgerDateRange) -> List<Entry>,
     today: LocalDate,
     selectedDate: LocalDate,
     baselineCents: Long?,
     scrollState: LazyListState,
     enabled: Boolean,
+    monthGestureArea: Modifier = Modifier,
     onSelect: (LocalDate) -> Unit,
     onBaselineChange: (Long?) -> Unit,
     onEdit: (Entry) -> Unit,
+    onDelete: (Entry) -> Unit,
 ) {
     val month = YearMonth.from(selectedDate)
-    val days = remember(data, month) { data.daysIn(month) }
+    val months = remember(month) {
+        (if (month > YearMonth.of(CalendarYearRange.first, 1)) listOf(month.minusMonths(1)) else emptyList()) +
+            month +
+            (if (month < YearMonth.of(CalendarYearRange.last, 12)) listOf(month.plusMonths(1)) else emptyList())
+    }
+    val reads = mutableMapOf<YearMonth, LedgerRead<Map<LocalDate, LedgerDay>>>()
+    for (visibleMonth in months.sortedBy { it != month }) {
+        key(visibleMonth) {
+            reads[visibleMonth] = rememberLedgerRead(visibleMonth, revision, catalogReady) {
+                val range = LedgerDateRange(visibleMonth.atDay(1), visibleMonth.atEndOfMonth())
+                data.copy(entries = readEntries(range)).daysIn(visibleMonth)
+            }
+        }
+    }
+    val read = reads.getValue(month)
+    val loaded = read.value != null
+    val days = read.value.orEmpty()
     val day = days[selectedDate] ?: EmptyDay
     val lookup = remember(data.categories, data.groups) { DetailCategories(data) }
     var editBaseline by rememberSaveable { mutableStateOf(false) }
@@ -96,7 +118,7 @@ internal fun CalendarDetails(
     ) {
         item("calendar") {
             key(month) {
-                CalendarCard(data, month, today, selectedDate, days, baselineCents, onSelect, { pickDate = true })
+                CalendarCard(months, month, today, selectedDate, reads, baselineCents, monthGestureArea, onSelect, { pickDate = true })
             }
         }
         item("baseline") {
@@ -144,14 +166,13 @@ internal fun CalendarDetails(
                 }
             }
         }
-        if (day.entries.isEmpty()) item("day-empty") {
-            Text(
-                if (loaded) "这天还没有记录" else "正在读取本地账目…",
-                color = Muted, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-            )
+        if (!loaded) item("day-loading") {
+            LedgerReadStatus(read, Modifier.padding(horizontal = 4.dp, vertical = 8.dp))
+        } else if (day.entries.isEmpty()) item("day-empty") {
+            Text("这天还没有记录", color = Muted, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp))
         }
         items(day.entries, key = { "entry:${it.id}" }) { entry ->
-            DetailRecord(entry, lookup, enabled, showDate = false, onEdit)
+            DetailRecord(entry, lookup, enabled, showDate = false, onEdit, onDelete)
         }
     }
     if (editBaseline) {
@@ -171,20 +192,16 @@ internal fun CalendarDetails(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CalendarCard(
-    data: Snapshot,
+    months: List<YearMonth>,
     month: YearMonth,
     today: LocalDate,
     selectedDate: LocalDate,
-    days: Map<LocalDate, LedgerDay>,
+    reads: Map<YearMonth, LedgerRead<Map<LocalDate, LedgerDay>>>,
     baselineCents: Long?,
+    monthGestureArea: Modifier,
     onSelect: (LocalDate) -> Unit,
     onPickDate: () -> Unit,
 ) {
-    val months = remember(month) {
-        (if (month > YearMonth.of(CalendarYearRange.first, 1)) listOf(month.minusMonths(1)) else emptyList()) +
-            month +
-            (if (month < YearMonth.of(CalendarYearRange.last, 12)) listOf(month.plusMonths(1)) else emptyList())
-    }
     val homePage = months.indexOf(month)
     val pager = rememberPagerState(initialPage = homePage) { months.size }
     val scope = rememberCoroutineScope()
@@ -243,11 +260,11 @@ private fun CalendarCard(
                     }
                 }
             }
-            HorizontalPager(state = pager, modifier = Modifier.fillMaxWidth().clipToBounds(),
+            HorizontalPager(state = pager, modifier = Modifier.fillMaxWidth().then(monthGestureArea).clipToBounds(),
                 verticalAlignment = Alignment.Top) { page ->
                 val pageMonth = months[page]
                 val active = page == homePage
-                val pageDays = if (active) days else remember(data, pageMonth) { data.daysIn(pageMonth) }
+                val pageDays = reads[pageMonth]?.value.orEmpty()
                 CalendarGrid(
                     pageMonth, today, if (active) selectedDate else firstSelection(pageMonth, today),
                     pageDays, baselineCents, active, { if (!pager.isScrollInProgress) onSelect(it) },
@@ -416,8 +433,16 @@ internal class DetailCategories(data: Snapshot) {
     val groups = data.groups.associateBy { it.id }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun DetailRecord(entry: Entry, lookup: DetailCategories, enabled: Boolean, showDate: Boolean, onEdit: (Entry) -> Unit) {
+internal fun DetailRecord(
+    entry: Entry,
+    lookup: DetailCategories,
+    enabled: Boolean,
+    showDate: Boolean,
+    onEdit: (Entry) -> Unit,
+    onDelete: (Entry) -> Unit,
+) {
     val category = lookup.categories.getValue(entry.categoryId)
     val group = lookup.groups.getValue(category.groupId)
     val income = group.direction == Direction.INCOME
@@ -425,9 +450,15 @@ internal fun DetailRecord(entry: Entry, lookup: DetailCategories, enabled: Boole
     val date = remember(entry.occurredAt, showDate) {
         if (showDate) entry.occurredAt.replace('T', ' ') else LocalDateTime.parse(entry.occurredAt).format(ClockFormat)
     }
+    var actions by remember(entry.id) { mutableStateOf(false) }
+    val shape = RoundedCornerShape(16.dp)
     OutlinedCard(
-        onClick = { onEdit(entry) }, enabled = enabled, modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, if (showDate || income) color else Divider),
+        modifier = Modifier.fillMaxWidth().clip(shape).combinedClickable(
+            enabled = enabled, role = Role.Button, onClickLabel = "修改记录",
+            onLongClickLabel = "打开记录操作", onLongClick = { actions = true },
+            onClick = { onEdit(entry) },
+        ),
+        shape = shape, border = BorderStroke(1.dp, if (showDate || income) color else Divider),
         colors = CardDefaults.outlinedCardColors(containerColor = Color.White),
     ) {
         Row(
@@ -445,6 +476,16 @@ internal fun DetailRecord(entry: Entry, lookup: DetailCategories, enabled: Boole
             Column(horizontalAlignment = Alignment.End) {
                 Text("${if (income) "+" else "−"}¥${Money.format(entry.cents)}", color = color, fontSize = 14.sp)
                 Text("修改 ›", color = Muted, fontSize = 11.sp)
+                DropdownMenu(expanded = actions, onDismissRequest = { actions = false }) {
+                    DropdownMenuItem(enabled = enabled, text = { Text("修改记录") }, onClick = {
+                        actions = false
+                        onEdit(entry)
+                    })
+                    DropdownMenuItem(enabled = enabled, text = { Text("删除记录", color = Red) }, onClick = {
+                        actions = false
+                        onDelete(entry)
+                    })
+                }
             }
         }
     }

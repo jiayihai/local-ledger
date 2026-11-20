@@ -35,12 +35,16 @@ internal fun FlowDetails(
     data: Snapshot,
     initialGroupId: String?,
     today: LocalDate,
-    loaded: Boolean,
+    catalogReady: Boolean,
+    revision: Long,
+    readEntries: suspend (LedgerDateRange) -> List<Entry>,
     enabled: Boolean,
     exportBusy: Boolean,
+    navigationActive: Boolean = true,
     onExitGroup: () -> Unit,
     onExport: (FlowExport) -> Unit,
     onEdit: (Entry) -> Unit,
+    onDelete: (Entry) -> Unit,
 ) {
     var periodKey by rememberSaveable { mutableStateOf(LedgerPeriod.MONTH.name) }
     var anchorDay by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -55,16 +59,20 @@ internal fun FlowDetails(
     val anchor = anchorDay?.let(LocalDate::ofEpochDay) ?: today
     val period = if (periodKey == CUSTOM) null else LedgerPeriod.valueOf(periodKey)
     val range = period?.range(anchor) ?: LedgerDateRange(LocalDate.ofEpochDay(customStart), LocalDate.ofEpochDay(customEnd))
-    val report = remember(data, range, initialGroupId) { data.flow(range, initialGroupId) }
+    val read = rememberLedgerRead(range to initialGroupId, revision, catalogReady) {
+        data.copy(entries = readEntries(range)).flow(range, initialGroupId)
+    }
+    val report = read.value
+    val loaded = report != null
     val lookup = remember(data.groups, data.categories) { DetailCategories(data) }
     val group = groupId?.let(lookup.groups::get)
     val category = categoryId?.let(lookup.categories::get)
-    val groupFlow = report.groups.firstOrNull { it.group.id == groupId }
+    val groupFlow = report?.groups?.firstOrNull { it.group.id == groupId }
     val categoryFlow = groupFlow?.categories?.firstOrNull { it.category.id == categoryId }
     val rows = when {
         categoryId != null -> categoryFlow?.entries.orEmpty()
         groupId != null -> groupFlow?.entries.orEmpty()
-        else -> report.entries
+        else -> report?.entries.orEmpty()
     }
     val subtotal = categoryFlow?.cents ?: if (categoryId != null) 0L else groupFlow?.cents ?: 0L
     val scroll = rememberLazyListState()
@@ -79,7 +87,7 @@ internal fun FlowDetails(
             scroll.requestScrollToItem(0)
         }
     }
-    BackHandler(enabled = categoryId != null || groupId != null, onBack = back)
+    BackHandler(enabled = navigationActive && (categoryId != null || groupId != null), onBack = back)
 
     fun openCustomRange() {
         rangeDraftStart = range.start.toEpochDay()
@@ -152,21 +160,21 @@ internal fun FlowDetails(
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (group == null) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FlowTotal("总开销", report.summary.expense, Ink, Modifier.weight(1f))
-                            FlowTotal("总收入", report.summary.income, Red, Modifier.weight(1f))
+                            FlowTotal("总开销", report?.summary?.expense, Ink, Modifier.weight(1f))
+                            FlowTotal("总收入", report?.summary?.income, Red, Modifier.weight(1f))
                         }
                     } else {
                         FlowTotal(if (group.direction == Direction.EXPENSE) "开销合计" else "收入合计",
-                            subtotal, directionColor(group.direction))
+                            subtotal.takeIf { loaded }, directionColor(group.direction))
                     }
                     FlowRow(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(
-                            if (loaded) "${rows.size} 笔 · ${if (group == null) "当前日期范围" else "当前分类及日期范围"}" else "正在读取账本…",
+                        if (loaded) Text(
+                            "${rows.size} 笔 · ${if (group == null) "当前日期范围" else "当前分类及日期范围"}",
                             modifier = Modifier.align(Alignment.CenterVertically), fontSize = 11.sp, color = FlowMuted,
-                        )
+                        ) else LedgerReadStatus(read, Modifier.align(Alignment.CenterVertically))
                         TextButton(
                             enabled = loaded && enabled && rows.isNotEmpty() && !exportBusy,
                             onClick = {
@@ -182,7 +190,7 @@ internal fun FlowDetails(
         if (loaded && group == null) {
             listOf(Direction.EXPENSE, Direction.INCOME).forEach { direction ->
                 val label = if (direction == Direction.EXPENSE) "开销大类" else "收入大类"
-                val groups = report.groups.filter { it.group.direction == direction }
+                val groups = report?.groups.orEmpty().filter { it.group.direction == direction }
                 item("heading:${direction.name}") {
                     FlowHeading(label, directionColor(direction))
                     if (groups.isEmpty()) Text(
@@ -212,7 +220,7 @@ internal fun FlowDetails(
         }
         if (loaded && rows.isNotEmpty()) {
             item("records-heading") { FlowHeading("逐笔流水", Ink) }
-            items(rows, key = { "record:${it.id}" }) { entry -> DetailRecord(entry, lookup, enabled, showDate = true, onEdit) }
+            items(rows, key = { "record:${it.id}" }) { entry -> DetailRecord(entry, lookup, enabled, showDate = true, onEdit, onDelete) }
         } else if (loaded && group != null) {
             item("no-rows") { Text("当前分类在这段时间没有流水", color = FlowMuted, fontSize = 13.sp) }
         }
@@ -267,10 +275,10 @@ private fun PeriodArrow(label: String, glyph: String, enabled: Boolean, onClick:
 }
 
 @Composable
-private fun FlowTotal(label: String, cents: Long, color: Color, modifier: Modifier = Modifier) {
+private fun FlowTotal(label: String, cents: Long?, color: Color, modifier: Modifier = Modifier) {
     Column(modifier) {
         Text(label, color = FlowMuted, fontSize = 12.sp)
-        Text("¥${Money.format(cents)}", color = color, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Text(cents?.let { "¥${Money.format(it)}" } ?: "—", color = color, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

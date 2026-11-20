@@ -18,19 +18,19 @@ import androidx.compose.ui.unit.sp
 import cn.localledger.core.*
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeParseException
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EntryEditor(
     original: Entry,
     data: Snapshot,
+    today: LocalDate,
     busy: Boolean,
     onClose: () -> Unit,
     onSave: (categoryId: String, cents: Long, date: LocalDate, note: String) -> Unit,
 ) {
     val originalCategory = data.categories.first { it.id == original.categoryId }
-    val originalDate = LocalDateTime.parse(original.occurredAt).toLocalDate().toString()
+    val originalDate = remember(original.occurredAt) { LocalDateTime.parse(original.occurredAt).toLocalDate().toEpochDay() }
     var amount by rememberSaveable(original.id) { mutableStateOf(Money.format(original.cents)) }
     var date by rememberSaveable(original.id) { mutableStateOf(originalDate) }
     var note by rememberSaveable(original.id) { mutableStateOf(original.note) }
@@ -59,8 +59,7 @@ internal fun EntryEditor(
             label = { Text("${if (group.direction == Direction.INCOME) "收入" else "支出"}金额 · 元") }, colors = fieldColors,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
-        OutlinedTextField(date, { date = it; error = null }, enabled = !busy, colors = fieldColors,
-            label = { Text("日期（yyyy-MM-dd）") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        EntryDateField(LocalDate.ofEpochDay(date), today, color, !busy) { date = it.toEpochDay(); error = null }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(note, { if (it.length <= 2000) note = it }, enabled = !busy, colors = fieldColors,
             label = { Text("备注（可选）") }, modifier = Modifier.fillMaxWidth())
@@ -98,10 +97,8 @@ internal fun EntryEditor(
         Button(enabled = !busy && validCategory && dirty, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = color), onClick = {
             try {
                 val cents = Money.parse(amount)
-                val parsedDate = LocalDate.parse(date)
-                onSave(categoryId, cents, parsedDate, note)
-            } catch (_: DateTimeParseException) { error = "请输入有效日期，例如 2026-11-17" }
-            catch (e: IllegalArgumentException) { error = e.message ?: "请检查填写内容" }
+                onSave(categoryId, cents, LocalDate.ofEpochDay(date), note)
+            } catch (e: IllegalArgumentException) { error = e.message ?: "请检查填写内容" }
             catch (_: ArithmeticException) { error = "金额超出支持范围" }
         }) { Text(if (busy) "保存中…" else "保存修改") }
     }
